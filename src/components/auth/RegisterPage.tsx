@@ -246,8 +246,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin }) =
                   {t["stateLabel"] || "State *"}
                 </label>
                 <select
-                  value={formData.state}
-                  onChange={(e) => handleChange("state", e.target.value)}
+                  value={["Andhra Pradesh", "Telangana", "Maharashtra", "Tamil Nadu", "Karnataka", "Gujarat", "Punjab", "Uttar Pradesh", "Madhya Pradesh"].includes(formData.state) ? formData.state : "Other"}
+                  onChange={(e) => {
+                    if (e.target.value === "Other") handleChange("state", "Other");
+                    else handleChange("state", e.target.value);
+                  }}
                   className="block w-full h-9 px-2.5 py-1.5 text-xs border border-slate-300 rounded text-slate-900 focus:outline-none focus:border-emerald-600 bg-slate-50/50"
                 >
                   <option value="Andhra Pradesh">Andhra Pradesh</option>
@@ -259,7 +262,18 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin }) =
                   <option value="Punjab">Punjab</option>
                   <option value="Uttar Pradesh">Uttar Pradesh</option>
                   <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Other">Other State</option>
                 </select>
+                {(formData.state === "Other" || !["Andhra Pradesh", "Telangana", "Maharashtra", "Tamil Nadu", "Karnataka", "Gujarat", "Punjab", "Uttar Pradesh", "Madhya Pradesh"].includes(formData.state)) && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Specify state..."
+                    value={formData.state === "Other" ? "" : formData.state}
+                    onChange={(e) => handleChange("state", e.target.value)}
+                    className="mt-1.5 block w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded text-slate-900 focus:outline-none focus:border-emerald-600 bg-amber-50/50 animate-in fade-in"
+                  />
+                )}
               </div>
             </div>
 

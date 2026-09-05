@@ -487,11 +487,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const weatherUrl = `/api/weather?lat=${fieldLat}&lng=${fieldLng}&startDate=${startDate}&endDate=${endDate}`;
     console.debug("[weather] fetch start", { weatherUrl, fetchId: thisFetchId });
 
-    fetch(weatherUrl, { signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Failed to fetch weather data: ${res.status}`);
-        return res.json();
-      })
+    const fetchWeatherData = async () => {
+      // 1. Try backend server endpoint (/api/weather) first
+      try {
+        const res = await fetch(weatherUrl, { signal: controller.signal });
+        const contentType = res.headers.get("content-type") || "";
+        if (res.ok && contentType.includes("application/json")) {
+          const data = await res.json();
+          if (data && data.daily && data.daily.time && data.daily.time.length > 0) {
+            return data;
+          }
+        }
+      } catch (err: any) {
+        if (err?.name === "AbortError") throw err;
+        console.warn("[weather] /api/weather endpoint unavailable or returned non-JSON, using direct Open-Meteo fallback.");
+      }
+
+      // 2. Direct Open-Meteo API fallback for Vercel production deployment
+      const openMeteoUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${fieldLat}&longitude=${fieldLng}&start_date=${startDate}&end_date=${endDate}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,wind_speed_10m_max&timezone=auto`;
+      let omRes = await fetch(openMeteoUrl, { signal: controller.signal });
+      let omData: any = null;
+
+      if (omRes.ok) {
+        omData = await omRes.json();
+      } else {
+        const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${fieldLat}&longitude=${fieldLng}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,wind_speed_10m_max&past_days=7&forecast_days=3&timezone=auto`;
+        omRes = await fetch(forecastUrl, { signal: controller.signal });
+        if (omRes.ok) {
+          omData = await omRes.json();
+        }
+      }
+
+      if (!omData || !omData.daily || !omData.daily.time || omData.daily.time.length === 0) {
+        throw new Error("Weather data unavailable from Open-Meteo API.");
+      }
+
+      return omData;
+    };
+
+    fetchWeatherData()
       .then((data) => {
         // Ignore stale responses
         if (thisFetchId !== weatherFetchIdRef.current) {
@@ -500,7 +534,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         if (!data || !data.daily || !data.daily.time || data.daily.time.length === 0) {
-          console.warn("[weather] no daily data returned from /api/weather");
+          console.warn("[weather] no daily data returned from weather service");
           setWeatherData(null);
           return;
         }

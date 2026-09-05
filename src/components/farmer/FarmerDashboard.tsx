@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useApp } from "../../context/AppContext";
 import {
   Camera,
@@ -28,7 +28,11 @@ import { FieldRegistrationModal } from "./FieldRegistrationModal";
 import { DisasterReportModal } from "./DisasterReportModal";
 import { CropRegistrationModal } from "./CropRegistrationModal";
 
-export const FarmerDashboard: React.FC = () => {
+interface FarmerDashboardProps {
+  voiceAction?: string | null;
+}
+
+export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({ voiceAction }) => {
   const {
     farmer,
     fields,
@@ -56,6 +60,27 @@ export const FarmerDashboard: React.FC = () => {
   const [isFieldModalOpen, setIsFieldModalOpen] = useState<boolean>(false);
   const [isDisasterModalOpen, setIsDisasterModalOpen] = useState<boolean>(false);
   const [isCropModalOpen, setIsCropModalOpen] = useState<boolean>(false);
+
+  // Handle voice-triggered actions from the VoiceAssistantWidget
+  useEffect(() => {
+    if (!voiceAction) return;
+    switch (voiceAction) {
+      case "OPEN_DISASTER_MODAL":
+        setIsDisasterModalOpen(true);
+        break;
+      case "OPEN_FIELD_MODAL":
+        setIsFieldModalOpen(true);
+        break;
+      case "OPEN_CROP_MODAL":
+        setIsCropModalOpen(true);
+        break;
+      case "NAVIGATE_DOSSIER":
+        setActiveTab("dossier");
+        break;
+      default:
+        break;
+    }
+  }, [voiceAction]);
 
   const activeField = fields.find((f) => f.id === activeFieldId) || fields[0];
   const fieldCrops = fields.length > 0 && activeField ? crops.filter((c) => c.fieldId === activeField.id) : [];
@@ -145,11 +170,11 @@ export const FarmerDashboard: React.FC = () => {
               </span>
             </div>
             <h2 className="text-xl font-bold text-slate-900 mt-1">
-              Namaste, {farmer.name || "Farmer"}
+              {t["namaste"] || "Namaste"}, {farmer.name || "Farmer"}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              {farmer.village ? `Village: ${farmer.village}` : "Village Registered"}
-              {farmer.district ? `, District: ${farmer.district}` : ""}
+              {farmer.village ? `${farmer.village}` : ""}
+              {farmer.district ? `, ${farmer.district}` : ""}
               {farmer.state ? `, ${farmer.state}` : ""}
               {farmer.insuranceInfo?.policyNumber ? ` • Policy: ${farmer.insuranceInfo.policyNumber}` : ""}
             </p>
@@ -194,12 +219,12 @@ export const FarmerDashboard: React.FC = () => {
         {fields.length > 0 && (
           <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">
-              Select Field:
+              {t["selectField"] || "Select Field:"}
             </span>
             {fields.map((f) => {
               const isSelected = f.id === activeFieldId;
               const fCrops = crops.filter((c) => c.fieldId === f.id);
-              const cropLabel = fCrops.length > 0 ? fCrops[0].cropType : "No crop";
+              const cropLabel = fCrops.length > 0 ? fCrops[0].cropType : (t["noCropRegistered"] || "No crop");
 
               return (
                 <button
@@ -267,7 +292,7 @@ export const FarmerDashboard: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-2xs">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Survey Number
+                  {t["surveyNumberLabel"] || "Survey Number"}
                 </span>
                 <span className="font-mono text-sm font-bold text-slate-900 mt-0.5 block">
                   {activeField.surveyNumber || "N/A"}
@@ -277,7 +302,7 @@ export const FarmerDashboard: React.FC = () => {
 
               <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-2xs">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Crop & Variety
+                  {t["cropVariety"] || "Crop & Variety"}
                 </span>
                 {activeCrop ? (
                   <>
@@ -285,18 +310,18 @@ export const FarmerDashboard: React.FC = () => {
                       {activeCrop.cropType}
                     </span>
                     <span className="text-[10px] text-slate-500 truncate block">
-                      {activeCrop.variety || "Standard Variety"}
+                      {activeCrop.variety || (t["standardVariety"] || "Standard Variety")}
                     </span>
                   </>
                 ) : (
                   <div className="mt-1">
-                    <span className="text-xs text-slate-400 block font-semibold">No crop registered</span>
+                    <span className="text-xs text-slate-400 block font-semibold">{t["noCropRegistered"] || "No crop registered"}</span>
                     <button
                       type="button"
                       onClick={() => setIsCropModalOpen(true)}
                       className="text-[10px] text-emerald-700 hover:text-emerald-800 font-bold underline mt-0.5 inline-block"
                     >
-                      + Register Crop
+                      + {t["registerCrop"] || "Register Crop"}
                     </button>
                   </div>
                 )}
@@ -304,7 +329,7 @@ export const FarmerDashboard: React.FC = () => {
 
               <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-2xs">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Growth Stage
+                  {t["cropStage"] || "Growth Stage"}
                 </span>
                 {activeCrop ? (
                   <>
@@ -322,7 +347,7 @@ export const FarmerDashboard: React.FC = () => {
 
               <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-2xs">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Claim Status
+                  {t["claimStatusLabel"] || "Claim Status"}
                 </span>
                 <span
                   className={`text-xs font-bold mt-0.5 inline-block px-2 py-0.5 rounded ${
@@ -335,10 +360,10 @@ export const FarmerDashboard: React.FC = () => {
                       : "bg-slate-100 text-slate-700"
                   }`}
                 >
-                  {activeClaim?.status || "No active claims"}
+                  {activeClaim?.status || (t["noActiveClaims"] || "No active claims")}
                 </span>
                 <span className="text-[10px] text-slate-400 block mt-0.5">
-                  {activeClaim ? `Claim ID: ${activeClaim.id}` : "Healthy Baseline"}
+                  {activeClaim ? `Claim ID: ${activeClaim.id}` : (t["healthyBaseline"] || "Healthy Baseline")}
                 </span>
               </div>
             </div>
@@ -356,7 +381,7 @@ export const FarmerDashboard: React.FC = () => {
               }`}
             >
               <Calendar className="h-3.5 w-3.5" />
-              Evidence Timeline
+              {t["evidenceTimeline"] || "Evidence Timeline"}
             </button>
 
             <button
@@ -369,7 +394,7 @@ export const FarmerDashboard: React.FC = () => {
               }`}
             >
               <MapPin className="h-3.5 w-3.5" />
-              Field Damage Map
+              {t["fieldDamageMap"] || "Field Damage Map"}
             </button>
 
             <button
@@ -382,7 +407,7 @@ export const FarmerDashboard: React.FC = () => {
               }`}
             >
               <Camera className="h-3.5 w-3.5" />
-              Guided 4-Step Photo Capture
+              {t["guidedCapture"] || "Guided 4-Step Photo Capture"}
             </button>
 
             <button
@@ -395,7 +420,7 @@ export const FarmerDashboard: React.FC = () => {
               }`}
             >
               <Layers className="h-3.5 w-3.5" />
-              Before vs. After
+              {t["beforeAfter"] || "Before vs. After"}
             </button>
 
             <button
@@ -408,7 +433,7 @@ export const FarmerDashboard: React.FC = () => {
               }`}
             >
               <CloudRain className="h-3.5 w-3.5" />
-              Weather Telemetry
+              {t["weatherTelemetry"] || "Weather Telemetry"}
             </button>
 
             <button
@@ -421,7 +446,7 @@ export const FarmerDashboard: React.FC = () => {
               }`}
             >
               <FileText className="h-3.5 w-3.5" />
-              Claim Dossier
+              {t["claimDossier"] || "Claim Dossier"}
             </button>
           </div>
 

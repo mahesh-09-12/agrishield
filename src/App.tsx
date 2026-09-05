@@ -1,28 +1,66 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AppProvider, useApp } from "./context/AppContext";
+import { VoiceProvider, useVoice } from "./context/VoiceContext";
 import { translations } from "./lib/i18n";
 import { Header } from "./components/layout/Header";
 import { FarmerDashboard } from "./components/farmer/FarmerDashboard";
 import { OfficerDashboard } from "./components/officer/OfficerDashboard";
 import { WalkthroughModal } from "./components/layout/WalkthroughModal";
+import { TutorialVideoModal } from "./components/layout/TutorialVideoModal";
+import { VoiceAssistantWidget } from "./components/layout/VoiceAssistantWidget";
 import { LoginPage } from "./components/auth/LoginPage";
 import { RegisterPage } from "./components/auth/RegisterPage";
 import { Loader2 } from "lucide-react";
 
 const MainContent: React.FC = () => {
   const { role, isOnline, t } = useApp();
+  const { registerActionDispatcher } = useVoice();
   const [isWalkthroughOpen, setIsWalkthroughOpen] = useState<boolean>(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState<boolean>(false);
+  // Voice-triggered modal signals: FarmerDashboard reads these via callbacks
+  const [voiceAction, setVoiceAction] = useState<string | null>(null);
+
+  // Register the voice action dispatcher so VoiceContext can trigger UI actions
+  useEffect(() => {
+    const unregister = registerActionDispatcher((action: string) => {
+      switch (action) {
+        case "OPEN_TUTORIAL":
+          setIsTutorialOpen(true);
+          break;
+        case "READ_PAGE":
+          // handled inside VoiceContext readPageSummary
+          break;
+        default:
+          // Forward farmer-modal actions (OPEN_DISASTER_MODAL, OPEN_FIELD_MODAL, OPEN_CROP_MODAL, NAVIGATE_DOSSIER)
+          setVoiceAction(action);
+          // Clear after a tick so re-triggering the same action works
+          setTimeout(() => setVoiceAction(null), 300);
+          break;
+      }
+    });
+    return unregister;
+  }, [registerActionDispatcher]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-200">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-200 relative">
       {/* High Density Header */}
-      <Header onOpenWalkthrough={() => setIsWalkthroughOpen(true)} />
+      <Header
+        onOpenWalkthrough={() => setIsWalkthroughOpen(true)}
+        onOpenTutorial={() => setIsTutorialOpen(true)}
+      />
 
       {/* Main High Density Workspace */}
       <main className="flex-1 mx-auto max-w-7xl w-full px-3 sm:px-4 lg:px-6 py-4">
-        {role === "FARMER" ? <FarmerDashboard /> : <OfficerDashboard />}
+        {role === "FARMER" ? (
+          <FarmerDashboard voiceAction={voiceAction} />
+        ) : (
+          <OfficerDashboard />
+        )}
       </main>
+
+      {/* Floating Voice Assistant Widget */}
+      <VoiceAssistantWidget />
 
       {/* High Density Compact System Status Footer */}
       <footer className="h-8 bg-slate-100 border-t border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 text-[10px] text-slate-400 mt-auto">
@@ -46,13 +84,18 @@ const MainContent: React.FC = () => {
         isOpen={isWalkthroughOpen}
         onClose={() => setIsWalkthroughOpen(false)}
       />
+
+      {/* Step-by-Step Guiding Tutorial Video Modal */}
+      <TutorialVideoModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+      />
     </div>
   );
 };
 
 const AuthGate: React.FC = () => {
   const { user, userRole, farmerProfile, officerProfile, loading } = useAuth();
-  // Avoid calling useApp here (AuthGate must be usable before AppProvider is mounted).
   const lang = typeof window !== "undefined" ? (window.localStorage.getItem("agrishield-language") || "en") : "en";
   const t = translations[lang] || translations.en;
   const [authView, setAuthView] = useState<"login" | "register">("login");
@@ -90,11 +133,12 @@ export function App() {
   return (
     <AuthProvider>
       <AppProvider>
-        <AuthGate />
+        <VoiceProvider>
+          <AuthGate />
+        </VoiceProvider>
       </AppProvider>
     </AuthProvider>
   );
 }
 
 export default App;
-

@@ -280,7 +280,7 @@ export const EvidenceTimeline: React.FC<{
             <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/60 p-5 text-center space-y-2">
               <Camera className="h-5 w-5 text-slate-400 mx-auto" />
               <span className="text-xs font-bold text-slate-700 block">
-                No visual evidence recorded for this field yet
+                {t["noVisualEvidence"] || "No visual evidence recorded for this field yet"}
               </span>
               <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
                 Capture growth baseline photos or post-disaster damage photos to build your verifiable indemnity dossier.

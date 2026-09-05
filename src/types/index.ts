@@ -360,6 +360,8 @@ export interface WeatherReport {
   correlationSummary: {
     peakRainfallDate: string;
     peakRainfallMm: number;
+    peakWindSpeedKmh: number;
+    avgMaxTempC: number;
     extremeEventConfirmed: boolean;
     eventLabel: string;
     correlationStatement: string;

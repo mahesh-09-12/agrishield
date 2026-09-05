@@ -187,26 +187,62 @@ export const FarmerProfileModal: React.FC<FarmerProfileModalProps> = ({
                 <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   District
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                  className="w-full rounded border border-slate-300 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 bg-slate-50/50"
-                />
+                <select
+                  value={["Krishna", "Guntur", "Nalgonda", "Khammam", "Coimbatore"].includes(formData.district) ? formData.district : "Other"}
+                  onChange={(e) => {
+                    if (e.target.value === "Other") setFormData({ ...formData, district: "Other" });
+                    else setFormData({ ...formData, district: e.target.value });
+                  }}
+                  className="w-full rounded border border-slate-300 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 bg-slate-50/50 mb-1.5"
+                >
+                  <option value="Krishna">Krishna</option>
+                  <option value="Guntur">Guntur</option>
+                  <option value="Nalgonda">Nalgonda</option>
+                  <option value="Khammam">Khammam</option>
+                  <option value="Coimbatore">Coimbatore</option>
+                  <option value="Other">Other District</option>
+                </select>
+                {(formData.district === "Other" || !["Krishna", "Guntur", "Nalgonda", "Khammam", "Coimbatore"].includes(formData.district)) && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Specify district..."
+                    value={formData.district === "Other" ? "" : formData.district}
+                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                    className="w-full rounded border border-amber-300 bg-amber-50/50 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 animate-in fade-in"
+                  />
+                )}
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   State
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.state}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  className="w-full rounded border border-slate-300 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 bg-slate-50/50"
-                />
+                <select
+                  value={["Andhra Pradesh", "Telangana", "Tamil Nadu", "Maharashtra", "Karnataka"].includes(formData.state) ? formData.state : "Other"}
+                  onChange={(e) => {
+                    if (e.target.value === "Other") setFormData({ ...formData, state: "Other" });
+                    else setFormData({ ...formData, state: e.target.value });
+                  }}
+                  className="w-full rounded border border-slate-300 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 bg-slate-50/50 mb-1.5"
+                >
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Other">Other State</option>
+                </select>
+                {(formData.state === "Other" || !["Andhra Pradesh", "Telangana", "Tamil Nadu", "Maharashtra", "Karnataka"].includes(formData.state)) && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Specify state..."
+                    value={formData.state === "Other" ? "" : formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    className="w-full rounded border border-amber-300 bg-amber-50/50 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 animate-in fade-in"
+                  />
+                )}
               </div>
             </div>
 

@@ -140,7 +140,7 @@ export const OfficerDashboard: React.FC = () => {
               </span>
             </div>
             <h2 className="text-xl font-bold text-slate-900 mt-1">
-              Crop Insurance Evidence Review & Claim Adjudication
+              {t["officerReviewHeader"] || "Crop Insurance Evidence Review & Claim Adjudication"}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Assessor: {officer.name} ({officer.badgeNumber}) &bull; Human-in-the-Loop AI Decision Support
@@ -157,7 +157,7 @@ export const OfficerDashboard: React.FC = () => {
                   : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              Claims Queue ({claims.length})
+              {t["claimsQueue"] || "Claims Queue"} ({claims.length})
             </button>
             <button
               type="button"
@@ -168,7 +168,7 @@ export const OfficerDashboard: React.FC = () => {
                   : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              Detailed Claim Dossier
+              {t["detailedDossier"] || "Detailed Claim Dossier"}
             </button>
           </div>
         </div>
@@ -176,27 +176,27 @@ export const OfficerDashboard: React.FC = () => {
         {/* Aggregate KPI Grid (High Density) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-2xs">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Claims</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t["totalClaims"] || "Total Claims"}</span>
             <span className="text-xl font-bold text-slate-900 mt-0.5 block">{totalClaimsCount}</span>
             <span className="text-[10px] text-slate-500">Kharif 2026 Season</span>
           </div>
 
           <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 shadow-2xs">
-            <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">Pending / Under Review</span>
+            <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">{t["pendingReview"] || "Pending / Under Review"}</span>
             <span className="text-xl font-bold text-amber-900 mt-0.5 block">{underReviewCount}</span>
             <span className="text-[10px] text-amber-700">Requires assessment</span>
           </div>
 
           <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 shadow-2xs">
-            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Approved Payouts</span>
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">{t["approvedPayouts"] || "Approved Payouts"}</span>
             <span className="text-xl font-bold text-emerald-900 mt-0.5 block">{approvedCount}</span>
             <span className="text-[10px] text-emerald-700">Fast-track DBT processed</span>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-2xs">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Estimated Loss</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t["totalEstimatedLoss"] || "Total Estimated Loss"}</span>
             <span className="text-lg font-bold text-emerald-800 mt-0.5 block">₹{totalLossEstimated.toLocaleString()}</span>
-            <span className="text-[10px] text-slate-500">Across Krishna district</span>
+            <span className="text-[10px] text-slate-500">Across {officer.assignedDistrict} district</span>
           </div>
         </div>
       </div>
@@ -206,7 +206,7 @@ export const OfficerDashboard: React.FC = () => {
           {/* Dossier Header Switcher */}
           <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200 mb-3 shadow-2xs">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-600">Select Claim Dossier:</span>
+              <span className="text-xs font-semibold text-slate-600">{t["selectField"] || "Select Claim Dossier:"}</span>
               <select
                 value={selectedClaimId}
                 onChange={(e) => {
@@ -231,7 +231,7 @@ export const OfficerDashboard: React.FC = () => {
                 className="inline-flex items-center gap-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-2.5 py-1.5 rounded transition cursor-pointer"
               >
                 <Check className="h-3.5 w-3.5" />
-                Approve
+                {t["approve"] || "Approve"}
               </button>
               <button
                 type="button"
@@ -239,7 +239,7 @@ export const OfficerDashboard: React.FC = () => {
                 className="inline-flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-2.5 py-1.5 rounded transition cursor-pointer"
               >
                 <HelpCircle className="h-3.5 w-3.5" />
-                Request More Evidence
+                {t["requestMoreEvidence"] || "Request More Evidence"}
               </button>
               <button
                 type="button"
@@ -247,7 +247,7 @@ export const OfficerDashboard: React.FC = () => {
                 className="inline-flex items-center gap-1 border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-bold px-2.5 py-1.5 rounded transition cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
-                Reject
+                {t["reject"] || "Reject"}
               </button>
             </div>
           </div>
@@ -265,7 +265,7 @@ export const OfficerDashboard: React.FC = () => {
                 <Search className="h-3.5 w-3.5 absolute left-2.5 top-2.5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search by Claim ID, Disaster, Farmer..."
+                  placeholder={t["searchPlaceholder"] || "Search by Claim ID, Disaster, Farmer..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded border border-slate-300 text-slate-900 focus:outline-none focus:border-emerald-600"
@@ -278,12 +278,12 @@ export const OfficerDashboard: React.FC = () => {
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className="rounded border border-slate-300 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 font-medium focus:outline-none"
                 >
-                  <option value="ALL">All Statuses</option>
-                  <option value="Under Review">Under Review</option>
-                  <option value="Evidence Collection">Evidence Collection</option>
-                  <option value="Approved">Approved</option>
-                  <option value="More Evidence Requested">More Evidence Requested</option>
-                  <option value="Rejected">Rejected</option>
+                  <option value="ALL">{t["allStatuses"] || "All Statuses"}</option>
+                  <option value="Under Review">{t["underReview"] || "Under Review"}</option>
+                  <option value="Evidence Collection">{t["evidenceTimeline"] || "Evidence Collection"}</option>
+                  <option value="Approved">{t["approved"] || "Approved"}</option>
+                  <option value="More Evidence Requested">{t["requestMoreEvidence"] || "More Evidence Requested"}</option>
+                  <option value="Rejected">{t["rejected"] || "Rejected"}</option>
                 </select>
 
                 <select
@@ -291,9 +291,9 @@ export const OfficerDashboard: React.FC = () => {
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="rounded border border-slate-300 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 font-medium focus:outline-none"
                 >
-                  <option value="date">Sort: Date</option>
-                  <option value="damage">Sort: Damage %</option>
-                  <option value="completeness">Sort: Completeness</option>
+                  <option value="date">{t["sortDate"] || "Sort: Date"}</option>
+                  <option value="damage">{t["sortDamage"] || "Sort: Damage %"}</option>
+                  <option value="completeness">{t["sortCompleteness"] || "Sort: Completeness"}</option>
                 </select>
               </div>
             </div>
@@ -346,28 +346,28 @@ export const OfficerDashboard: React.FC = () => {
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                       <div>
-                        <span className="text-slate-400 text-[10px] font-bold uppercase block">Estimated Damage</span>
+                        <span className="text-slate-400 text-[10px] font-bold uppercase block">{t["estimatedDamage"] || "Estimated Damage"}</span>
                         <span className="font-bold text-rose-700 text-sm">
                           {item.aiDamageAggregate.estimatedDamagePercent}%
                         </span>
                       </div>
 
                       <div>
-                        <span className="text-slate-400 text-[10px] font-bold uppercase block">Evidence Completeness</span>
+                        <span className="text-slate-400 text-[10px] font-bold uppercase block">{t["evidenceCompleteness"] || "Evidence Completeness"}</span>
                         <span className="font-bold text-emerald-800 text-sm">
                           {item.evidenceCompleteness}%
                         </span>
                       </div>
 
                       <div>
-                        <span className="text-slate-400 text-[10px] font-bold uppercase block">Affected Area</span>
+                        <span className="text-slate-400 text-[10px] font-bold uppercase block">{t["affectedArea"] || "Affected Area"}</span>
                         <span className="font-semibold text-slate-800 text-sm">
-                          {item.preliminaryLossEstimate.estimatedAffectedAcres} Acres
+                          {item.preliminaryLossEstimate.estimatedAffectedAcres} {t["acres"] || "Acres"}
                         </span>
                       </div>
 
                       <div>
-                        <span className="text-slate-400 text-[10px] font-bold uppercase block">Estimated Indemnity</span>
+                        <span className="text-slate-400 text-[10px] font-bold uppercase block">{t["estimatedIndemnity"] || "Estimated Indemnity"}</span>
                         <span className="font-bold text-emerald-800 text-sm">
                           ₹{item.preliminaryLossEstimate.estimatedLossAmountINR.toLocaleString()}
                         </span>
@@ -392,7 +392,7 @@ export const OfficerDashboard: React.FC = () => {
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">
-                    Active Claim Selected
+                    {t["selectField"] || "Active Claim Selected"}
                   </span>
                   <h3 className="text-sm font-bold text-slate-900">{selectedClaim.id}</h3>
                 </div>
@@ -402,7 +402,7 @@ export const OfficerDashboard: React.FC = () => {
                   className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer"
                 >
                   <Eye className="h-3.5 w-3.5" />
-                  Full Dossier
+                  {t["detailedDossier"] || "Full Dossier"}
                 </button>
               </div>
 
@@ -411,7 +411,7 @@ export const OfficerDashboard: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-emerald-950 flex items-center gap-1 text-[11px]">
                     <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-                    AI Damage Assessment
+                    {t["damageAssessment"] || "AI Damage Assessment"}
                   </span>
                   <span className="font-bold text-rose-700 text-xs">
                     {selectedClaim.aiDamageAggregate.estimatedDamagePercent}% Loss
@@ -439,30 +439,30 @@ export const OfficerDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-3 gap-1 text-center text-[10px] font-semibold">
                   <div className="bg-white rounded p-1 text-emerald-800 border border-emerald-200">
-                    {selectedClaim.aiDamageAggregate.healthyPercent}% Intact
+                    {selectedClaim.aiDamageAggregate.healthyPercent}% {t["healthy"] || "Healthy"}
                   </div>
                   <div className="bg-white rounded p-1 text-amber-800 border border-amber-200">
-                    {selectedClaim.aiDamageAggregate.moderatePercent}% Lodged
+                    {selectedClaim.aiDamageAggregate.moderatePercent}% {t["moderate"] || "Moderate"}
                   </div>
                   <div className="bg-white rounded p-1 text-rose-800 border border-rose-200">
-                    {selectedClaim.aiDamageAggregate.severePercent}% Submerged
+                    {selectedClaim.aiDamageAggregate.severePercent}% {t["severe"] || "Severe"}
                   </div>
                 </div>
               </div>
 
               {/* Rule Validation Checklist */}
               <div className="space-y-1 text-xs">
-                <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block">Rule Validation Matrix:</span>
+                <span className="font-bold text-[10px] text-slate-400 uppercase tracking-wider block">{t["ruleValidationMatrix"] || "Rule Validation Matrix:"}</span>
                 <div className="flex items-center justify-between text-[11px] p-1.5 bg-slate-50 rounded border border-slate-100">
-                  <span className="text-slate-600">Boundary GPS Coordinates:</span>
+                  <span className="text-slate-600">{t["gpsVerification"] || "Boundary GPS Coordinates:"}</span>
                   <span className="font-bold text-emerald-700">Passed ✓</span>
                 </div>
                 <div className="flex items-center justify-between text-[11px] p-1.5 bg-slate-50 rounded border border-slate-100">
-                  <span className="text-slate-600">Timestamp Continuity:</span>
+                  <span className="text-slate-600">{t["timestampCheck"] || "Timestamp Continuity:"}</span>
                   <span className="font-bold text-emerald-700">Passed ✓</span>
                 </div>
                 <div className="flex items-center justify-between text-[11px] p-1.5 bg-slate-50 rounded border border-slate-100">
-                  <span className="text-slate-600">Open-Meteo Rainfall Spike:</span>
+                  <span className="text-slate-600">{t["weatherCorrelation"] || "Open-Meteo Rainfall Spike:"}</span>
                   <span className="font-bold text-emerald-700">Confirmed (94.2mm) ✓</span>
                 </div>
               </div>
@@ -472,7 +472,7 @@ export const OfficerDashboard: React.FC = () => {
                 <div className="flex items-center justify-between text-xs font-bold text-white border-b border-slate-800 pb-1.5">
                   <span className="flex items-center gap-1">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                    Officer Decision
+                    {t["officerDecision"] || "Officer Decision"}
                   </span>
                   <span className="font-mono text-emerald-400">
                     ₹{selectedClaim.preliminaryLossEstimate.estimatedLossAmountINR.toLocaleString()}
@@ -486,7 +486,7 @@ export const OfficerDashboard: React.FC = () => {
                     className="w-full flex items-center justify-center gap-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 shadow-xs transition cursor-pointer"
                   >
                     <Check className="h-3.5 w-3.5" />
-                    Approve Claim Payout
+                    {t["approvePayout"] || "Approve Claim Payout"}
                   </button>
 
                   <button
@@ -495,7 +495,7 @@ export const OfficerDashboard: React.FC = () => {
                     className="w-full flex items-center justify-center gap-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs py-1.5 border border-slate-700 transition cursor-pointer"
                   >
                     <HelpCircle className="h-3.5 w-3.5" />
-                    Request Additional Evidence
+                    {t["requestMoreEvidence"] || "Request Additional Evidence"}
                   </button>
 
                   <button
@@ -504,7 +504,7 @@ export const OfficerDashboard: React.FC = () => {
                     className="w-full flex items-center justify-center gap-1 rounded border border-rose-900/60 text-rose-400 hover:bg-rose-950/40 font-bold text-xs py-1.5 transition cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5" />
-                    Reject Claim
+                    {t["rejectClaim"] || "Reject Claim"}
                   </button>
                 </div>
               </div>
@@ -519,7 +519,7 @@ export const OfficerDashboard: React.FC = () => {
           <div className="bg-white rounded-xl max-w-md w-full p-5 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-200 pb-2">
               <h3 className="text-sm font-bold text-slate-900">
-                Confirm Determination: {decisionModalType}
+                {t["confirmDetermination"] || "Confirm Determination"}: {decisionModalType}
               </h3>
               <button
                 type="button"
@@ -537,7 +537,7 @@ export const OfficerDashboard: React.FC = () => {
             {decisionModalType === "Approved" && (
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                  Approved Compensation Amount (INR):
+                  {t["approvedCompensationAmount"] || "Approved Compensation Amount (INR):"}
                 </label>
                 <input
                   type="number"
@@ -550,7 +550,7 @@ export const OfficerDashboard: React.FC = () => {
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                Official Case Remarks / Justification:
+                {t["officialRemarks"] || "Official Case Remarks / Justification:"}
               </label>
               <textarea
                 rows={3}
@@ -574,7 +574,7 @@ export const OfficerDashboard: React.FC = () => {
                 onClick={handleConfirmDecision}
                 className="px-3 py-1.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-2xs transition"
               >
-                Submit Official Determination
+                {t["submitDetermination"] || "Submit Official Determination"}
               </button>
             </div>
           </div>

@@ -16,16 +16,20 @@ export const FieldRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => 
   const [step, setStep] = useState<1 | 2>(1);
   const [fieldName, setFieldName] = useState<string>("North Canal Plot B");
   const [surveyNumber, setSurveyNumber] = useState<string>("Sy.No 148/2A");
-  const [soilType, setSoilType] = useState<SoilType>("Alluvial Clay Loam");
+  const [soilType, setSoilType] = useState<SoilType | "Other">("Alluvial Clay Loam");
+  const [customSoilType, setCustomSoilType] = useState<string>("");
 
   const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([]);
   const [calculatedArea, setCalculatedArea] = useState<number>(2.4);
   const [centerCoord, setCenterCoord] = useState<[number, number]>([16.5124, 80.6982]);
   const [cropType, setCropType] = useState<string>("Rice");
+  const [customCropType, setCustomCropType] = useState<string>("");
   const [variety, setVariety] = useState<string>("BPT 5204 (Samba Mahsuri)");
+  const [customVariety, setCustomVariety] = useState<string>("");
   const [sowingDate, setSowingDate] = useState<string>("2026-06-15");
   const [harvestDate, setHarvestDate] = useState<string>("2026-11-20");
-  const [currentStage, setCurrentStage] = useState<CropStage>("Vegetative Growth");
+  const [currentStage, setCurrentStage] = useState<CropStage | "Other">("Vegetative Growth");
+  const [customStage, setCustomStage] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -57,26 +61,11 @@ export const FieldRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => 
       setFormError(t["cropTypeRequired"] || "Please select a crop type.");
       return;
     }
-    if (!variety.trim()) {
-      setFormError(t["varietyRequired"] || "Please provide the seed variety / hybrid.");
-      return;
-    }
-    if (!sowingDate) {
-      setFormError(t["sowingDateRequired"] || "Please select a sowing / transplanting date.");
-      return;
-    }
-    if (!harvestDate) {
-      setFormError(t["harvestDateRequired"] || "Please select an expected harvest date.");
-      return;
-    }
-    if (new Date(harvestDate) < new Date(sowingDate)) {
-      setFormError(t["harvestBeforeSowing"] || "Expected harvest date cannot be before the sowing date.");
-      return;
-    }
-    if (!currentStage) {
-      setFormError(t["cropStageRequired"] || "Please select the current crop stage.");
-      return;
-    }
+
+    const finalSoilType = (soilType === "Other" ? (customSoilType || "Loamy Soil") : soilType) as SoilType;
+    const finalCropType = cropType === "Other" ? (customCropType || "Custom Crop") : cropType;
+    const finalVariety = variety === "Other" ? (customVariety || "Custom Variety") : variety;
+    const finalStage = (currentStage === "Other" ? (customStage || "Vegetative Growth") : currentStage) as CropStage;
 
     setIsSubmitting(true);
     try {
@@ -92,18 +81,18 @@ export const FieldRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => 
           {
             name: fieldName.trim(),
             surveyNumber: surveyNumber.trim(),
-            soilType,
+            soilType: finalSoilType,
             coordinates: boundaryCoords,
             centerLat: centerCoord[0] || 16.5116,
             centerLng: centerCoord[1] || 80.7005,
             approxAreaAcres: calculatedArea || 2.4,
           },
           {
-            cropType: cropType.trim(),
-            variety: variety.trim(),
+            cropType: finalCropType.trim(),
+            variety: finalVariety.trim(),
             sowingDate,
             expectedHarvestDate: harvestDate,
-            currentStage,
+            currentStage: finalStage,
             season: "Kharif 2026",
             cultivatedAreaAcres: calculatedArea || 2.4,
           }
@@ -113,7 +102,7 @@ export const FieldRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => 
           farmerId: farmer?.id || farmer?.farmerId || "FMR-001",
           name: fieldName.trim(),
           surveyNumber: surveyNumber.trim(),
-          soilType,
+          soilType: finalSoilType,
           coordinates: boundaryCoords,
           centerLat: centerCoord[0] || 16.5116,
           centerLng: centerCoord[1] || 80.7005,
@@ -123,11 +112,11 @@ export const FieldRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => 
         await registerCrop({
           fieldId: createdField.id,
           farmerId: farmer?.id || farmer?.farmerId || "FMR-001",
-          cropType: cropType.trim(),
-          variety: variety.trim(),
+          cropType: finalCropType.trim(),
+          variety: finalVariety.trim(),
           sowingDate,
           expectedHarvestDate: harvestDate,
-          currentStage,
+          currentStage: finalStage,
           season: "Kharif 2026",
           cultivatedAreaAcres: calculatedArea || 2.4,
         });
@@ -203,7 +192,18 @@ export const FieldRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => 
                   <option value="Red Sandy Soil">Red Sandy Soil</option>
                   <option value="Loamy Soil">Loamy Soil</option>
                   <option value="Sandy Loam">Sandy Loam</option>
+                  <option value="Other">Other Soil Type</option>
                 </select>
+                {soilType === "Other" && (
+                  <input
+                    type="text"
+                    value={customSoilType}
+                    onChange={(e) => setCustomSoilType(e.target.value)}
+                    placeholder="Please specify soil classification..."
+                    required
+                    className="mt-1.5 w-full rounded border border-amber-300 bg-amber-50/50 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 animate-in fade-in"
+                  />
+                )}
               </div>
             </div>
 
@@ -248,12 +248,46 @@ export const FieldRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => 
                   <option value="Black Gram">Black Gram (Urad)</option>
                   <option value="Sugarcane">Sugarcane</option>
                   <option value="Wheat">Wheat</option>
+                  <option value="Other">Other Crop Species</option>
                 </select>
+                {cropType === "Other" && (
+                  <input
+                    type="text"
+                    value={customCropType}
+                    onChange={(e) => setCustomCropType(e.target.value)}
+                    placeholder="Please specify crop type..."
+                    required
+                    className="mt-1.5 w-full rounded border border-amber-300 bg-amber-50/50 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 animate-in fade-in"
+                  />
+                )}
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1 uppercase tracking-wider">{t["cultivar"] || "Seed Variety / Hybrid"}</label>
-                <input type="text" value={variety} onChange={(e) => { setVariety(e.target.value); if (formError) setFormError(null); }} className="w-full rounded border border-slate-300 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600" />
+                <select
+                  value={variety.startsWith("Other") || variety === "Other" ? "Other" : variety}
+                  onChange={(e) => {
+                    if (e.target.value === "Other") setVariety("Other");
+                    else setVariety(e.target.value);
+                  }}
+                  className="w-full rounded border border-slate-300 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600"
+                >
+                  <option value="BPT 5204 (Samba Mahsuri)">BPT 5204 (Samba Mahsuri)</option>
+                  <option value="MTU 1010">MTU 1010</option>
+                  <option value="RNR 15048 (Telangana Sona)">RNR 15048 (Telangana Sona)</option>
+                  <option value="Hybrid H6 Cotton">Hybrid H6 Cotton</option>
+                  <option value="Other">Other Variety</option>
+                </select>
+                {(variety === "Other" || !["BPT 5204 (Samba Mahsuri)", "MTU 1010", "RNR 15048 (Telangana Sona)", "Hybrid H6 Cotton"].includes(variety)) && (
+                  <input
+                    type="text"
+                    value={customVariety || (variety !== "Other" ? variety : "")}
+                    onChange={(e) => { setCustomVariety(e.target.value); setVariety("Other"); }}
+                    placeholder="Please specify variety..."
+                    required
+                    className="mt-1.5 w-full rounded border border-amber-300 bg-amber-50/50 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 animate-in fade-in"
+                  />
+                )}
               </div>
 
               <div>
@@ -268,13 +302,23 @@ export const FieldRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => 
 
               <div className="sm:col-span-2">
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1 uppercase tracking-wider">{t["growthStage"] || "Current Crop Stage"}</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  {(["Sowing", "Vegetative Growth", "Flowering", "Maturity / Harvest"] as CropStage[]).map((stg) => (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                  {(["Sowing", "Vegetative Growth", "Flowering", "Maturity / Harvest", "Other"] as (CropStage | "Other")[]).map((stg) => (
                     <button key={stg} type="button" onClick={() => { setCurrentStage(stg); if (formError) setFormError(null); }} className={`rounded border p-1.5 text-center text-xs font-semibold transition cursor-pointer ${ currentStage === stg ? "border-emerald-600 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-500" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50" }`}>
                       {stg}
                     </button>
                   ))}
                 </div>
+                {currentStage === "Other" && (
+                  <input
+                    type="text"
+                    value={customStage}
+                    onChange={(e) => setCustomStage(e.target.value)}
+                    placeholder="Please specify growth stage..."
+                    required
+                    className="mt-1.5 w-full rounded border border-amber-300 bg-amber-50/50 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 animate-in fade-in"
+                  />
+                )}
               </div>
             </div>
 

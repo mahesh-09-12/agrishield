@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
+import { useVoice } from "../../context/VoiceContext";
 import { LanguageCode } from "../../types";
 import { FarmerProfileModal } from "../farmer/FarmerProfileModal";
 import {
@@ -13,9 +14,15 @@ import {
   User,
   Menu,
   X,
+  Tv,
+  Mic,
+  Volume2,
 } from "lucide-react";
 
-export const Header: React.FC<{ onOpenWalkthrough: () => void }> = ({ onOpenWalkthrough }) => {
+export const Header: React.FC<{
+  onOpenWalkthrough: () => void;
+  onOpenTutorial?: () => void;
+}> = ({ onOpenWalkthrough, onOpenTutorial }) => {
   const {
     role,
     language,
@@ -26,6 +33,7 @@ export const Header: React.FC<{ onOpenWalkthrough: () => void }> = ({ onOpenWalk
   } = useApp();
 
   const { farmerProfile, officerProfile, logout } = useAuth();
+  const { isListening, startListening, stopListening, readPageSummary } = useVoice();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
@@ -80,6 +88,35 @@ export const Header: React.FC<{ onOpenWalkthrough: () => void }> = ({ onOpenWalk
               </span>
             </div>
           )}
+
+          {/* Prominent Tutorial Video Button ("How to Use AgriShield") */}
+          <button
+            type="button"
+            onClick={onOpenTutorial}
+            title="How to Use AgriShield - Step-by-Step Tutorial Video"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-700 text-white hover:bg-emerald-800 px-3 py-1 text-xs font-bold transition cursor-pointer shadow-xs animate-pulse hover:animate-none"
+          >
+            <Tv className="h-3.5 w-3.5 text-emerald-200" />
+            <span>How to Use AgriShield</span>
+          </button>
+
+          {/* Voice Assistance Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isListening) stopListening();
+              else startListening();
+            }}
+            title="Voice Assistance / Listen & Speak"
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition cursor-pointer shadow-2xs ${
+              isListening
+                ? "border-rose-400 bg-rose-50 text-rose-700 animate-pulse"
+                : "border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800"
+            }`}
+          >
+            <Mic className={`h-3.5 w-3.5 ${isListening ? "text-rose-600" : "text-emerald-700"}`} />
+            <span className="hidden md:inline">{isListening ? "Listening..." : "Voice Guide"}</span>
+          </button>
 
           {/* Interactive Guide Pill (Farmer only) */}
           {!isOfficer && (
@@ -160,6 +197,18 @@ export const Header: React.FC<{ onOpenWalkthrough: () => void }> = ({ onOpenWalk
         <div className="sm:hidden absolute top-14 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-md">
           <div className="mx-auto max-w-7xl w-full px-3 sm:px-6">
             <div className="flex flex-col gap-2 py-3">
+              {/* Tutorial Video button mobile */}
+              <button onClick={() => { if (onOpenTutorial) onOpenTutorial(); setMobileMenuOpen(false); }} className="flex items-center gap-2 px-2 py-2 rounded-lg bg-emerald-700 text-white font-bold text-sm">
+                <Tv className="h-4 w-4" />
+                <span>How to Use AgriShield Tutorial</span>
+              </button>
+
+              {/* Voice Guide mobile */}
+              <button onClick={() => { readPageSummary(); setMobileMenuOpen(false); }} className="flex items-center gap-2 px-2 py-2 rounded-lg bg-emerald-50 text-emerald-800 font-semibold text-sm">
+                <Volume2 className="h-4 w-4 text-emerald-600" />
+                <span>Voice Guidance (Read Screen)</span>
+              </button>
+
               {/* Profile / identity */}
               {!isOfficer && farmerProfile && (
                 <button onClick={() => { setIsProfileModalOpen(true); setMobileMenuOpen(false); }} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-50">
@@ -184,7 +233,7 @@ export const Header: React.FC<{ onOpenWalkthrough: () => void }> = ({ onOpenWalk
                   <option value="hi">हिंदी (HI)</option>
                   <option value="te">తెలుగు (TE)</option>
                   <option value="ta">தமிழ் (TA)</option>
-                  <option value="mr">मराठी (MR)</option>
+                  <option value="mr">మరాठी (MR)</option>
                 </select>
               </div>
 
@@ -206,3 +255,4 @@ export const Header: React.FC<{ onOpenWalkthrough: () => void }> = ({ onOpenWalk
     </header>
   );
 };
+

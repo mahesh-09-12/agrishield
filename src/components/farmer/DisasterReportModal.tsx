@@ -4,7 +4,7 @@ import { DisasterType } from "../../types";
 import { X, CloudLightning, CheckCircle2, ArrowRight } from "lucide-react";
 import { sampleCropImages } from "../../lib/demoData";
 
-const DISASTER_TYPES: DisasterType[] = [
+const DISASTER_TYPES: (DisasterType | "Other")[] = [
   "Heavy Rainfall",
   "Flood",
   "Hailstorm",
@@ -12,6 +12,7 @@ const DISASTER_TYPES: DisasterType[] = [
   "Cyclone",
   "Pest Attack",
   "Unseasonal Frost",
+  "Other",
 ];
 
 export const DisasterReportModal: React.FC<{
@@ -22,7 +23,9 @@ export const DisasterReportModal: React.FC<{
   const { fields, activeFieldId, crops, reportDisaster, t } = useApp();
 
   const [selectedFieldId, setSelectedFieldId] = useState<string>(activeFieldId || "FL001");
-  const [disasterType, setDisasterType] = useState<DisasterType>("Heavy Rainfall");
+  const [customFieldName, setCustomFieldName] = useState<string>("");
+  const [disasterType, setDisasterType] = useState<DisasterType | "Other">("Heavy Rainfall");
+  const [customDisasterType, setCustomDisasterType] = useState<string>("");
   const [eventDate, setEventDate] = useState<string>("2026-08-22");
   const [eventTime, setEventTime] = useState<string>("14:30");
   const [description, setDescription] = useState<string>("Continuous unseasonal cloudburst and flash rainfall causing canal overflow and waterlogging across the northern plot.");
@@ -41,12 +44,15 @@ export const DisasterReportModal: React.FC<{
     e.preventDefault();
     setSubmitError(null);
     setIsSubmitting(true);
+
+    const finalDisasterType = (disasterType === "Other" ? (customDisasterType || "Other Calamity") : disasterType) as DisasterType;
+
     try {
       await reportDisaster({
-        fieldId: selectedFieldId,
+        fieldId: selectedFieldId === "Other" ? (customFieldName || "Custom Field") : selectedFieldId,
         cropId: currentCrop?.id || "CRP001",
         farmerId: currentField?.farmerId || "FMR-001",
-        disasterType: disasterType,
+        disasterType: finalDisasterType,
         date: eventDate,
         time: eventTime,
         description: description,
@@ -106,18 +112,39 @@ export const DisasterReportModal: React.FC<{
               <label className="block font-semibold text-slate-700 mb-1 text-[11px] uppercase tracking-wider">{t["selectImpactedField"] || "Select Impacted Field"}</label>
               <select value={selectedFieldId} onChange={(e) => setSelectedFieldId(e.target.value)} className="w-full rounded border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-emerald-600">
                 {fields.map((f) => (<option key={f.id} value={f.id}>{f.name} ({f.id}) &bull; {f.approxAreaAcres} Acres</option>))}
+                <option value="Other">Other Field / Unregistered Plot</option>
               </select>
+              {selectedFieldId === "Other" && (
+                <input
+                  type="text"
+                  value={customFieldName}
+                  onChange={(e) => setCustomFieldName(e.target.value)}
+                  placeholder="Please specify plot name / survey number..."
+                  required
+                  className="mt-1.5 w-full rounded border border-amber-300 bg-amber-50/50 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 animate-in fade-in"
+                />
+              )}
             </div>
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1 text-[11px] uppercase tracking-wider">{t["disasterEventClassification"] || "Disaster Event Classification"}</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {DISASTER_TYPES.map((type) => (
                   <button key={type} type="button" onClick={() => setDisasterType(type)} className={`rounded border px-2 py-1.5 text-center text-xs font-semibold transition cursor-pointer ${ disasterType === type ? "border-rose-600 bg-rose-50 text-rose-800 ring-1 ring-rose-500" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" }`}>
                     {type}
                   </button>
                 ))}
               </div>
+              {disasterType === "Other" && (
+                <input
+                  type="text"
+                  value={customDisasterType}
+                  onChange={(e) => setCustomDisasterType(e.target.value)}
+                  placeholder="Please specify custom disaster event..."
+                  required
+                  className="mt-1.5 w-full rounded border border-amber-300 bg-amber-50/50 px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 animate-in fade-in"
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
