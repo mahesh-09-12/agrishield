@@ -533,8 +533,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setIsWeatherLoading(true);
     const controller = new AbortController();
-    const timeoutMs = 10000;
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const timeoutMs = 30000;
+    const timeoutId = window.setTimeout(() => {
+      console.warn("[weather] fetch aborted (timeout)");
+      controller.abort();
+    }, timeoutMs);
 
     const thisFetchId = ++weatherFetchIdRef.current;
     lastWeatherFetchKeyRef.current = fetchKey;

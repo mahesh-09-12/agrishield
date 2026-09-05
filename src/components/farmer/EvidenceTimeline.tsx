@@ -40,6 +40,9 @@ export const EvidenceTimeline: React.FC<{
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     : [];
 
+  const formatCoordinate = (value?: number | null) =>
+    typeof value === "number" && Number.isFinite(value) ? value.toFixed(4) : "Not available";
+
   if (!activeField) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
@@ -255,7 +258,7 @@ export const EvidenceTimeline: React.FC<{
                     <div className="flex flex-wrap items-center justify-between pt-1.5 border-t border-slate-100 gap-1.5 text-[10px]">
                       <div className="flex items-center gap-1 text-slate-500 font-mono">
                         <MapPin className="h-3 w-3 text-emerald-700" />
-                        Lat: {ev.lat.toFixed(4)}, Lng: {ev.lng.toFixed(4)}
+                        Lat: {formatCoordinate(ev.lat)}, Lng: {formatCoordinate(ev.lng)}
                       </div>
 
                       <div className="flex items-center gap-2">
