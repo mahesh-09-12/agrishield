@@ -22,7 +22,15 @@ import {
   FirestoreDisaster,
   FirestoreClaim,
 } from "../types";
-import { initialOfficerProfile } from "../lib/demoData";
+import {
+  initialOfficerProfile,
+  initialClaims,
+  initialFarmerProfile,
+  initialFields,
+  initialCrops,
+  initialEvidence,
+  initialDisasterReports,
+} from "../lib/demoData";
 import { translations, TranslationDictionary } from "../lib/i18n";
 import { verifyEvidenceItem } from "../lib/verificationEngine";
 import {
@@ -270,8 +278,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       try {
         // 1. Fetch Fields
-        const firestoreFields = await getFarmerFields(targetUid);
-        const fieldRecords = firestoreFields.map((f) => fieldToRecord(f, targetFarmerId));
+        let firestoreFields: FirestoreField[] = [];
+        try {
+          firestoreFields = await getFarmerFields(targetUid);
+        } catch (e) {
+          console.warn("Could not load remote fields:", e);
+        }
+        let fieldRecords = firestoreFields.map((f) => fieldToRecord(f, targetFarmerId));
+
+        if (fieldRecords.length === 0 && (targetUid === "FMR001" || targetFarmerId === "FMR001")) {
+          fieldRecords = initialFields;
+        }
         setFields(fieldRecords);
 
         if (fieldRecords.length > 0) {
@@ -283,8 +300,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setActiveFieldId(selectedField.id);
 
           // 2. Fetch Crops across all fields
-          const allCrops: CropRecord[] = [];
-          const allEvidence: EvidenceRecord[] = [];
+          let allCrops: CropRecord[] = [];
+          let allEvidence: EvidenceRecord[] = [];
 
           for (const field of firestoreFields) {
             const fieldCrops = await getFieldCrops(targetUid, field.fieldId);
@@ -295,6 +312,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 allEvidence.push(evidenceToRecord(ev, targetFarmerId));
               }
             }
+          }
+
+          if (targetUid === "FMR001" || targetFarmerId === "FMR001") {
+            if (allCrops.length === 0) allCrops = initialCrops;
+            if (allEvidence.length === 0) allEvidence = initialEvidence;
           }
 
           setCrops(allCrops);
@@ -317,11 +339,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // 3. Fetch Disasters & Claims
-        const firestoreDisasters = await getFarmerDisasters(targetUid);
-        setDisasterReports(firestoreDisasters.map((d) => disasterToRecord(d, targetFarmerId)));
+        let firestoreDisasters: FirestoreDisaster[] = [];
+        try {
+          firestoreDisasters = await getFarmerDisasters(targetUid);
+        } catch (e) {
+          console.warn("Could not load remote disasters:", e);
+        }
+        let disasterList = firestoreDisasters.map((d) => disasterToRecord(d, targetFarmerId));
+        if (disasterList.length === 0 && (targetUid === "FMR001" || targetFarmerId === "FMR001")) {
+          disasterList = initialDisasterReports;
+        }
+        setDisasterReports(disasterList);
 
-        const firestoreClaims = await getFarmerClaims(targetUid);
-        const claimRecords = firestoreClaims.map((c) => claimToRecord(c, targetFarmerId));
+        let firestoreClaims: FirestoreClaim[] = [];
+        try {
+          firestoreClaims = await getFarmerClaims(targetUid);
+        } catch (e) {
+          console.warn("Could not load remote claims:", e);
+        }
+        let claimRecords = firestoreClaims.map((c) => claimToRecord(c, targetFarmerId));
+        if (claimRecords.length === 0 && (targetUid === "FMR001" || targetFarmerId === "FMR001")) {
+          claimRecords = initialClaims;
+        }
         setClaims(claimRecords);
         if (claimRecords.length > 0) {
           setActiveClaimId(claimRecords[0].id);
@@ -354,7 +393,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       userRole,
       user.uid,
       (firestoreClaims) => {
-        const claimRecords = firestoreClaims.map((c) => claimToRecord(c, c.farmerId || user.uid));
+        let claimRecords = firestoreClaims.map((c) => claimToRecord(c, c.farmerId || user.uid));
+        if (claimRecords.length === 0) {
+          if (userRole === "officer") {
+            claimRecords = initialClaims;
+          } else if (userRole === "farmer" && (user.uid === "FMR001" || farmerProfile?.farmerId === "FMR001")) {
+            claimRecords = initialClaims;
+          }
+        }
         setClaims(claimRecords);
         if (claimRecords.length > 0 && !activeClaimId) {
           setActiveClaimId(claimRecords[0].id);
@@ -364,8 +410,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsLoadingFirestore(false);
       },
       (err, info) => {
-        console.error("Failed to subscribe to claims. Query:", info, "Error:", err);
-        setFirestoreError(err?.message || String(err));
+        console.warn("Failed to subscribe to claims remote, falling back:", info, err);
+        if (userRole === "officer") {
+          setClaims(initialClaims);
+          if (!activeClaimId && initialClaims.length > 0) {
+            setActiveClaimId(initialClaims[0].id);
+          }
+        }
         setIsLoadingFirestore(false);
       }
     );
@@ -380,11 +431,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (userRole === "officer" && activeClaimId) {
       const currentClaim = claims.find((c) => c.id === activeClaimId);
       if (currentClaim && currentClaim.farmerId) {
-        getFarmerProfile(currentClaim.farmerId).then((profile) => {
-          if (profile) {
-            setFarmer(profile);
-          }
-        });
+        if (currentClaim.farmerId === "FMR001") {
+          setFarmer(initialFarmerProfile);
+        } else {
+          getFarmerProfile(currentClaim.farmerId).then((profile) => {
+            if (profile) {
+              setFarmer(profile);
+            }
+          });
+        }
         loadFarmerData(currentClaim.farmerId, currentClaim.farmerId, currentClaim.fieldId, currentClaim.cropId);
       }
     }
@@ -822,22 +877,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       throw new Error("AI assessment failed");
     } catch {
-      const isSevere = disasterType === "Flood" || disasterType === "Heavy Rainfall";
       return {
-        cropType: cropType || "Rice (Paddy)",
-        visibleCondition: isSevere
-          ? "Waterlogged soil with extensive leaf lodging"
-          : "Moderate moisture stress",
-        damageSeverity: isSevere ? "Severe" : "Moderate",
-        severityScore: isSevere ? 74 : 42,
-        possibleDamageCategory: isSevere ? "Flood/water damage" : "Physical crop damage",
-        confidence: 88,
-        explanation:
-          "Preliminary assessment: Inundation and foliar lodging noted at field coordinates.",
-        featuresDetected: ["Canopy lodging", "Surface water pooling", "Moisture chlorosis"],
-        anomalyFlags: [],
+        finalStatus: "NEEDS REVIEW",
+        isAgricultural: false,
+        contentIdentified: "Unverified image",
+        evidenceQuality: "LOW",
+        cropIdentified: cropType || "Unknown",
+        evidenceType: evidenceType,
+        cropStage: stage,
+        observedConditions: "Image analysis unavailable locally",
+        damageSeverity: "UNKNOWN",
+        confidence: 0,
+        reason: "Offline fallback. Visual analysis requires human officer review.",
+        detectedDamage: [],
+        estimatedAffectedArea: "Not applicable",
+        impactPercentage: "Not applicable",
+        evidenceMismatch: false,
+        humanReviewRequired: true,
         isFallback: true,
-        fallbackReason: "Processed via on-device local fallback model",
+        fallbackReason: "Processed via local fallback handler",
         analyzedAt: new Date().toISOString(),
       };
     }
@@ -894,7 +952,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const damageClassification: DamageSeverity =
-      aiAssessment?.damageSeverity || evidenceData.damageClassification || "Moderate";
+      aiAssessment?.finalStatus === "INVALID EVIDENCE" || aiAssessment?.damageSeverity === "NOT APPLICABLE"
+        ? "NOT APPLICABLE"
+        : aiAssessment?.damageSeverity && aiAssessment.damageSeverity !== "UNKNOWN"
+        ? aiAssessment.damageSeverity
+        : evidenceData.damageClassification && evidenceData.damageClassification !== "UNKNOWN"
+        ? evidenceData.damageClassification
+        : "UNKNOWN";
 
     const baseRecord: EvidenceRecord = {
       ...evidenceData,
@@ -1080,18 +1144,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (postEvidence.length === 0) return;
 
+    const validPostEvidence = postEvidence.filter(
+      (e) =>
+        e.aiAssessment?.finalStatus !== "INVALID EVIDENCE" &&
+        e.damageClassification !== "NOT APPLICABLE"
+    );
+
+    if (validPostEvidence.length === 0) return;
+
     let totalHealthy = 0;
     let totalModerate = 0;
     let totalSevere = 0;
 
-    postEvidence.forEach((e) => {
-      const sev = e.aiAssessment?.damageSeverity || e.damageClassification || "Moderate";
-      if (sev === "Healthy") totalHealthy++;
-      else if (sev === "Moderate") totalModerate++;
-      else totalSevere++;
+    validPostEvidence.forEach((e) => {
+      const sev = e.aiAssessment?.damageSeverity || e.damageClassification || "UNKNOWN";
+      if (sev === "NONE" || sev === "LOW") totalHealthy++;
+      else if (sev === "MODERATE") totalModerate++;
+      else if (sev === "HIGH" || sev === "SEVERE") totalSevere++;
     });
 
-    const count = postEvidence.length;
+    const count = validPostEvidence.length;
     const healthyPct = Math.round((totalHealthy / count) * 100);
     const moderatePct = Math.round((totalModerate / count) * 100);
     const severePct = Math.round((totalSevere / count) * 100);

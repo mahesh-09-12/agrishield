@@ -221,21 +221,29 @@ export type EvidenceType =
   | "Damaged area"
   | "Close-up";
 
-export type DamageSeverity = "Healthy" | "Moderate" | "Severe";
+export type DamageSeverity = "NONE" | "LOW" | "MODERATE" | "HIGH" | "SEVERE" | "UNKNOWN" | "NOT APPLICABLE";
 
 export interface AIAssessmentResult {
-  cropType: string;
-  visibleCondition: string;
+  finalStatus: "VERIFIED EVIDENCE" | "NEEDS REVIEW" | "INVALID EVIDENCE" | "EVIDENCE MISMATCH";
+  contentIdentified?: string;
+  isAgricultural?: boolean;
+  evidenceType: string;
+  evidenceQuality: "HIGH" | "MEDIUM" | "LOW" | "INVALID";
+  cropIdentified: string;
+  cropStage: string;
+  observedConditions: string;
+  detectedDamage: string[];
   damageSeverity: DamageSeverity;
-  severityScore: number; // 0 to 100
-  possibleDamageCategory: string;
+  estimatedAffectedArea?: string;
+  impactPercentage?: string;
+  evidenceMismatch: boolean;
   confidence: number;
-  explanation: string;
-  featuresDetected: string[];
-  anomalyFlags: string[];
+  reason: string;
+  humanReviewRequired: boolean;
+  // Fallback and metadata fields
   isFallback?: boolean;
   fallbackReason?: string;
-  analyzedAt: string;
+  analyzedAt?: string;
 }
 
 export interface VerificationResult {

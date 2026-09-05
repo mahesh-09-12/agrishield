@@ -100,7 +100,7 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
                 <span className="text-emerald-700 font-bold text-[11px]">Lush & Erect Canopy (Healthy)</span>
               </div>
               <p className="text-[10px] text-slate-600 leading-relaxed bg-white/80 rounded p-1.5 border border-slate-200">
-                {preItem.aiAssessment?.explanation || "Normal tillering and uniform greenness recorded during pre-disaster baseline audit."}
+                {preItem.aiAssessment?.reason || "Normal tillering and uniform greenness recorded during pre-disaster baseline audit."}
               </p>
             </div>
           </div>
@@ -133,11 +133,11 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
               <div className="flex items-center justify-between text-slate-700 font-medium">
                 <span className="text-[11px]">Condition:</span>
                 <span className="text-rose-700 font-bold text-[11px]">
-                  {postItem.aiAssessment?.possibleDamageCategory || "Flood Inundation & Lodging"}
+                  {postItem.aiAssessment?.detectedDamage?.join(", ") || "Flood Inundation & Lodging"}
                 </span>
               </div>
               <p className="text-[10px] text-slate-600 leading-relaxed bg-white/80 rounded p-1.5 border border-slate-200">
-                {postItem.aiAssessment?.explanation || "Significant water inundation and vegetative lodging causing root-zone anoxia."}
+                {postItem.aiAssessment?.reason || "Significant water inundation and vegetative lodging causing root-zone anoxia."}
               </p>
             </div>
           </div>

@@ -214,7 +214,12 @@ export const GuidedEvidenceCapture: React.FC<{ onComplete?: () => void }> = ({ o
         evidenceType: currentStep.evidenceType,
         stepName: `Step ${currentStep.stepNumber}: ${currentStep.title}`,
         notes: notes || currentStep.instruction,
-        damageClassification: currentAIResult?.damageSeverity || "Severe",
+        damageClassification:
+          currentAIResult?.finalStatus === "INVALID EVIDENCE" || currentAIResult?.damageSeverity === "NOT APPLICABLE"
+            ? "NOT APPLICABLE"
+            : currentAIResult?.damageSeverity && currentAIResult.damageSeverity !== "UNKNOWN"
+            ? currentAIResult.damageSeverity
+            : "UNKNOWN",
         aiAssessment: currentAIResult || undefined,
       });
 
@@ -435,41 +440,147 @@ export const GuidedEvidenceCapture: React.FC<{ onComplete?: () => void }> = ({ o
 
       {/* Live AI Assessment Feedback Card */}
       {currentAIResult && (
-        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 animate-in fade-in">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-1 text-xs font-bold text-emerald-900">
-              <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-              Gemini AI Preliminary Assessment
-            </div>
-            <span
-              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                currentAIResult.damageSeverity === "Healthy"
-                  ? "bg-emerald-100 text-emerald-800"
-                  : currentAIResult.damageSeverity === "Moderate"
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-rose-100 text-rose-800"
+        <div
+          className={`mt-3 rounded-lg border p-3.5 transition-all ${
+            currentAIResult.finalStatus === "INVALID EVIDENCE"
+              ? "border-rose-300 bg-rose-50/90 text-rose-950"
+              : currentAIResult.finalStatus === "NEEDS REVIEW"
+              ? "border-amber-300 bg-amber-50/90 text-amber-950"
+              : "border-emerald-200 bg-emerald-50/70 text-emerald-950"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div
+              className={`flex items-center gap-1.5 text-xs font-bold ${
+                currentAIResult.finalStatus === "INVALID EVIDENCE"
+                  ? "text-rose-900"
+                  : currentAIResult.finalStatus === "NEEDS REVIEW"
+                  ? "text-amber-900"
+                  : "text-emerald-900"
               }`}
             >
-              {currentAIResult.damageSeverity} Damage ({currentAIResult.severityScore}% impact)
+              {currentAIResult.finalStatus === "INVALID EVIDENCE" ? (
+                <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+              ) : (
+                <Sparkles
+                  className={`h-4 w-4 shrink-0 ${
+                    currentAIResult.finalStatus === "NEEDS REVIEW"
+                      ? "text-amber-600"
+                      : "text-emerald-600"
+                  }`}
+                />
+              )}
+              <span>
+                {currentAIResult.finalStatus === "INVALID EVIDENCE"
+                  ? "Evidence Verification: Unrelated Image Detected"
+                  : "Gemini AI Preliminary Assessment"}
+              </span>
+            </div>
+            <span
+              className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                currentAIResult.finalStatus === "INVALID EVIDENCE"
+                  ? "bg-rose-100 text-rose-800 border-rose-300"
+                  : currentAIResult.finalStatus === "NEEDS REVIEW"
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : currentAIResult.damageSeverity === "NONE"
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                  : currentAIResult.damageSeverity === "MODERATE"
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : "bg-rose-100 text-rose-800 border-rose-300"
+              }`}
+            >
+              {currentAIResult.finalStatus === "INVALID EVIDENCE"
+                ? "INVALID EVIDENCE"
+                : currentAIResult.finalStatus === "NEEDS REVIEW"
+                ? "NEEDS REVIEW"
+                : `${currentAIResult.damageSeverity} Damage (${currentAIResult.estimatedAffectedArea || "0%"} impact)`}
             </span>
           </div>
 
-          <p className="text-xs text-slate-700 leading-relaxed font-medium">
-            {currentAIResult.explanation}
-          </p>
+          {currentAIResult.finalStatus === "INVALID EVIDENCE" ? (
+            <div className="space-y-2 mt-1">
+              <p className="text-xs text-rose-900 font-semibold leading-normal">
+                This image cannot be accepted as agricultural damage evidence.
+              </p>
 
-          <div className="mt-2 flex flex-wrap gap-1">
-            {currentAIResult.featuresDetected?.map((feat, i) => (
-              <span
-                key={i}
-                className="text-[10px] font-medium bg-white border border-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded shadow-2xs"
-              >
-                ✓ {feat}
-              </span>
-            ))}
-          </div>
+              {currentAIResult.contentIdentified && (
+                <div className="text-[11px] text-slate-800 bg-white/90 rounded border border-rose-200 px-2.5 py-1.5 flex items-center gap-1.5">
+                  <span className="font-bold text-slate-900">Identified Content:</span>
+                  <span className="font-medium text-rose-700">{currentAIResult.contentIdentified}</span>
+                </div>
+              )}
 
-          <p className="mt-2 text-[10px] text-slate-500 italic border-t border-emerald-200/60 pt-1">
+              <div className="grid grid-cols-2 gap-2 text-[11px] bg-white/90 rounded border border-rose-200 p-2.5">
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase tracking-wider font-semibold">Damage Severity</span>
+                  <span className="font-bold text-slate-700">Not applicable</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase tracking-wider font-semibold">Impact / Affected Area</span>
+                  <span className="font-bold text-slate-700">Not applicable</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-700 leading-relaxed">
+                {currentAIResult.reason}
+              </p>
+
+              <div className="pt-1 flex items-center justify-between">
+                <span className="text-[11px] text-rose-700 italic">
+                  Please retake or select a valid photo of your field or crop.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCapturedImage(null);
+                    setCapturedFile(null);
+                    setCurrentAIResult(null);
+                  }}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 hover:text-rose-900 underline cursor-pointer"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Retake Photo
+                </button>
+              </div>
+            </div>
+          ) : currentAIResult.finalStatus === "NEEDS REVIEW" ? (
+            <div className="space-y-2 mt-1">
+              <div className="grid grid-cols-2 gap-2 text-[11px] bg-white/90 rounded border border-amber-200 p-2.5">
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase tracking-wider font-semibold">Damage Severity</span>
+                  <span className="font-bold text-slate-700">Under Review</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase tracking-wider font-semibold">Impact / Affected Area</span>
+                  <span className="font-bold text-slate-700">Not applicable</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                {currentAIResult.reason}
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                {currentAIResult.reason}
+              </p>
+
+              {currentAIResult.detectedDamage && currentAIResult.detectedDamage.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {currentAIResult.detectedDamage.map((feat, i) => (
+                    <span
+                      key={i}
+                      className="text-[10px] font-medium bg-white border border-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded shadow-2xs"
+                    >
+                      ✓ {feat}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          <p className="mt-2 text-[10px] text-slate-500 italic border-t border-slate-200/60 pt-1">
             {t.disclaimerAI}
           </p>
         </div>
@@ -508,13 +619,20 @@ export const GuidedEvidenceCapture: React.FC<{ onComplete?: () => void }> = ({ o
 
         <button
           type="button"
-          disabled={!capturedImage || isAnalyzing || isUploading}
+          disabled={
+            !capturedImage ||
+            isAnalyzing ||
+            isUploading ||
+            currentAIResult?.finalStatus === "INVALID EVIDENCE"
+          }
           onClick={handleSaveAndConfirm}
           className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 text-xs font-bold shadow-2xs transition disabled:opacity-40 active:scale-95 cursor-pointer"
         >
           <span>
             {isUploading
               ? (t["savingUploading"] || "Saving & Uploading...")
+              : currentAIResult?.finalStatus === "INVALID EVIDENCE"
+              ? "Invalid Evidence - Retake Required"
               : currentStepIndex === guidedSteps.length - 1
               ? (t["confirmSaveAllEvidence"] || "Confirm & Save All Sector Evidence")
               : (t["confirmUsePhotoNext"] || "Confirm / Use Photo & Next")}

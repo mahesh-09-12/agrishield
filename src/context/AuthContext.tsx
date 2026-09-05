@@ -12,8 +12,9 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { auth, db } from "../lib/firebase";
+import { auth, db, isFirebaseConfigured } from "../lib/firebase";
 import { FarmerProfile, FarmerRegistrationInput, OfficerProfile } from "../types";
+import { initialFarmerProfile, initialOfficerProfile } from "../lib/demoData";
 
 interface AuthContextType {
   user: User | null;
@@ -24,6 +25,7 @@ interface AuthContextType {
   error: string | null;
   clearError: () => void;
   login: (email: string, pass: string) => Promise<void>;
+  loginAsDemoFarmer: () => Promise<void>;
   register: (input: FarmerRegistrationInput) => Promise<void>;
   logout: () => Promise<void>;
   updateFarmerProfile: (updates: Partial<FarmerProfile>) => Promise<void>;
@@ -222,46 +224,174 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return;
   };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setLoading(true);
-      if (currentUser) {
-        setUser(currentUser);
-        try {
-          await loadUserRoleAndProfile(currentUser);
-          setError(null);
-        } catch (err: any) {
-          console.error("Role lookup error:", err);
-          setUserRole(null);
+  const restoreOfflineSession = () => {
+    const savedOffline = localStorage.getItem("agrishield_active_user");
+    if (savedOffline) {
+      try {
+        const parsed = JSON.parse(savedOffline);
+        const offlineUser = {
+          uid: parsed.uid,
+          email: parsed.email,
+          displayName: parsed.email?.split("@")[0] || "User",
+        } as User;
+        setUser(offlineUser);
+        if (parsed.role === "officer") {
+          setUserRole("officer");
+          const cachedOff = localStorage.getItem("cached_officer_" + parsed.uid);
+          if (cachedOff) {
+            setOfficerProfile(JSON.parse(cachedOff));
+          } else {
+            setOfficerProfile(initialOfficerProfile);
+          }
           setFarmerProfile(null);
+        } else {
+          setUserRole("farmer");
+          const cachedFarm = localStorage.getItem("cached_farmer_" + parsed.uid);
+          if (cachedFarm) {
+            setFarmerProfile(JSON.parse(cachedFarm));
+          } else {
+            setFarmerProfile(initialFarmerProfile);
+          }
           setOfficerProfile(null);
-          setError(err.message || "Farmer profile not found. Please register first.");
         }
-      } else {
+      } catch {
         setUser(null);
         setUserRole(null);
         setFarmerProfile(null);
         setOfficerProfile(null);
       }
-      setLoading(false);
-    });
+    } else {
+      setUser(null);
+      setUserRole(null);
+      setFarmerProfile(null);
+      setOfficerProfile(null);
+    }
+  };
 
-    return () => unsubscribe();
+  useEffect(() => {
+    if (!isFirebaseConfigured) {
+      restoreOfflineSession();
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        async (currentUser) => {
+          setLoading(true);
+          if (currentUser) {
+            setUser(currentUser);
+            try {
+              await loadUserRoleAndProfile(currentUser);
+              setError(null);
+            } catch (err: any) {
+              console.error("Role lookup error:", err);
+              setUserRole(null);
+              setFarmerProfile(null);
+              setOfficerProfile(null);
+              setError(err.message || "Farmer profile not found. Please register first.");
+            }
+          } else {
+            restoreOfflineSession();
+          }
+          setLoading(false);
+        },
+        (authErr) => {
+          console.warn("onAuthStateChanged auth error handler:", authErr);
+          restoreOfflineSession();
+          setLoading(false);
+        }
+      );
+
+      return () => unsubscribe();
+    } catch (err) {
+      console.warn("Could not register onAuthStateChanged:", err);
+      restoreOfflineSession();
+      setLoading(false);
+    }
   }, []);
 
   const login = async (email: string, pass: string): Promise<void> => {
     setError(null);
     setLoading(true);
+
+    if (!isFirebaseConfigured) {
+      // Direct offline farmer session for demo / preview environments
+      const offlineUser = {
+        uid: "offline_" + email.replace(/[^a-zA-Z0-9]/g, "_"),
+        email: email.trim(),
+        displayName: email.split("@")[0],
+      } as User;
+      setUser(offlineUser);
+      localStorage.setItem(
+        "agrishield_active_user",
+        JSON.stringify({ uid: offlineUser.uid, email: offlineUser.email, role: "farmer" })
+      );
+      const cachedFarmer = localStorage.getItem("cached_farmer_" + offlineUser.uid);
+      if (cachedFarmer) {
+        try {
+          const parsed = JSON.parse(cachedFarmer);
+          setUserRole("farmer");
+          setFarmerProfile(parsed);
+          setOfficerProfile(null);
+          setLoading(false);
+          return;
+        } catch {}
+      }
+      const defaultFarmer: FarmerProfile = {
+        id: "FMR-OFFLINE",
+        farmerId: "FMR-OFFLINE",
+        uid: offlineUser.uid,
+        name: email.split("@")[0],
+        email: email.trim(),
+        phone: "9876543210",
+        village: "Vijayawada Rural",
+        district: "Krishna",
+        state: "Andhra Pradesh",
+        preferredLanguage: "en",
+        role: "farmer",
+        aadharLastFour: "9999",
+        createdAt: new Date().toISOString(),
+        insuranceInfo: {
+          policyNumber: "PMFBY/AP/2026/999888",
+          schemeName: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+          sumInsuredPerAcre: 38500,
+          insurerName: "Agriculture Insurance Company of India (AIC)",
+          coverageStartDate: "2026-06-01",
+          coverageEndDate: "2026-11-30",
+          applicationId: "APP-PMFBY-OFFLINE",
+        },
+      };
+      setUserRole("farmer");
+      setFarmerProfile(defaultFarmer);
+      setOfficerProfile(null);
+      localStorage.setItem("cached_farmer_" + offlineUser.uid, JSON.stringify(defaultFarmer));
+      setLoading(false);
+      return;
+    }
+
     try {
       const credential = await signInWithEmailAndPassword(auth, email.trim(), pass);
       setUser(credential.user);
       await loadUserRoleAndProfile(credential.user);
     } catch (err: any) {
       const code = err.code || err.message || "";
-      if (code.includes("auth/network-request-failed") || code.includes("offline") || code.includes("unavailable")) {
+      if (
+        code.includes("auth/network-request-failed") ||
+        code.includes("offline") ||
+        code.includes("unavailable") ||
+        code.includes("auth/invalid-api-key") ||
+        code.includes("auth/api-key-not-valid") ||
+        code.includes("auth/configuration-not-found")
+      ) {
         // Fallback offline session for demo/network issues
         const offlineUser = { uid: "offline_" + email.replace(/[^a-zA-Z0-9]/g, "_"), email: email.trim(), displayName: email.split("@")[0] } as User;
         setUser(offlineUser);
+        localStorage.setItem(
+          "agrishield_active_user",
+          JSON.stringify({ uid: offlineUser.uid, email: offlineUser.email, role: "farmer" })
+        );
         const cachedFarmer = localStorage.getItem("cached_farmer_" + offlineUser.uid);
         if (cachedFarmer) {
           try {
@@ -271,7 +401,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setOfficerProfile(null);
             setLoading(false);
             return;
-          } catch (e) {}
+          } catch {}
         }
         // Create default offline farmer profile
         const defaultFarmer: FarmerProfile = {
@@ -313,11 +443,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginAsDemoFarmer = async (): Promise<void> => {
+    setError(null);
+    setLoading(true);
+    try {
+      const demoUser = {
+        uid: "FMR001",
+        email: "ramesh.kumar@agrimail.in",
+        displayName: "Ramesh Kumar",
+      } as User;
+
+      setUser(demoUser);
+      setUserRole("farmer");
+      setFarmerProfile(initialFarmerProfile);
+      setOfficerProfile(null);
+      localStorage.setItem("cached_farmer_FMR001", JSON.stringify(initialFarmerProfile));
+      localStorage.setItem(
+        "agrishield_active_user",
+        JSON.stringify({ uid: "FMR001", email: "ramesh.kumar@agrimail.in", role: "farmer" })
+      );
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to log in as demo farmer");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loginAsOfficer = async (): Promise<void> => {
     setError(null);
     setLoading(true);
     const officerEmail = import.meta.env.VITE_OFFICER_EMAIL || "officer@agrishield.in";
     const officerPass = import.meta.env.VITE_OFFICER_PASSWORD || "AgriShieldOfficer2026!";
+
+    if (!isFirebaseConfigured) {
+      const offlineUser = {
+        uid: "offline_officer_uid",
+        email: officerEmail,
+        displayName: "Dr. Ananya Sharma",
+      } as User;
+      setUser(offlineUser);
+      setUserRole("officer");
+      const offProfile: OfficerProfile = {
+        uid: offlineUser.uid,
+        id: "AIC-AP-KR-042",
+        name: "Dr. Ananya Sharma",
+        email: officerEmail,
+        role: "officer",
+        officerId: "AIC-AP-KR-042",
+        district: "Krishna",
+        badgeNumber: "AIC-AP-KR-042",
+        assignedDistrict: "Krishna",
+        insurerName: "Agriculture Insurance Company of India",
+      };
+      setOfficerProfile(offProfile);
+      setFarmerProfile(null);
+      localStorage.setItem("cached_officer_" + offlineUser.uid, JSON.stringify(offProfile));
+      localStorage.setItem(
+        "agrishield_active_user",
+        JSON.stringify({ uid: offlineUser.uid, email: officerEmail, role: "officer" })
+      );
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       let credential;
       try {
@@ -365,10 +555,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setOfficerProfile(offProfile);
       setFarmerProfile(null);
       localStorage.setItem("cached_officer_" + credential.user.uid, JSON.stringify(offProfile));
+      localStorage.setItem(
+        "agrishield_active_user",
+        JSON.stringify({ uid: credential.user.uid, email: officerEmail, role: "officer" })
+      );
       setError(null);
     } catch (err: any) {
       const code = err.code || err.message || "";
-      if (code.includes("auth/network-request-failed") || code.includes("offline") || code.includes("unavailable")) {
+      if (
+        code.includes("auth/network-request-failed") ||
+        code.includes("offline") ||
+        code.includes("unavailable") ||
+        code.includes("auth/invalid-api-key") ||
+        code.includes("auth/api-key-not-valid") ||
+        code.includes("auth/configuration-not-found") ||
+        !isFirebaseConfigured
+      ) {
         // Offline officer fallback
         const offlineUser = { uid: "offline_officer_uid", email: officerEmail, displayName: "Dr. Ananya Sharma" } as User;
         setUser(offlineUser);
@@ -388,6 +590,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setOfficerProfile(offProfile);
         setFarmerProfile(null);
         localStorage.setItem("cached_officer_" + offlineUser.uid, JSON.stringify(offProfile));
+        localStorage.setItem(
+          "agrishield_active_user",
+          JSON.stringify({ uid: offlineUser.uid, email: officerEmail, role: "officer" })
+        );
         setError(null);
         setLoading(false);
         return;
@@ -403,6 +609,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (input: FarmerRegistrationInput): Promise<void> => {
     setError(null);
     setLoading(true);
+
+    if (!isFirebaseConfigured) {
+      const offlineUid = `offline_${Date.now()}`;
+      const offlineUser = {
+        uid: offlineUid,
+        email: input.email.trim(),
+        displayName: input.name.trim(),
+      } as User;
+      const newFarmerId = await generateReadableFarmerId();
+      const stateCode = (input.state || "AP").substring(0, 2).toUpperCase();
+      const randomPolicyDigits = Math.floor(100000 + Math.random() * 900000);
+
+      const newProfile: FarmerProfile = {
+        id: newFarmerId,
+        farmerId: newFarmerId,
+        uid: offlineUid,
+        name: input.name.trim(),
+        email: input.email.trim().toLowerCase(),
+        phone: input.phone.trim(),
+        village: input.village.trim(),
+        district: input.district.trim(),
+        state: input.state.trim(),
+        preferredLanguage: input.preferredLanguage || "en",
+        role: "farmer",
+        aadharLastFour: input.aadharLastFour?.trim() || "",
+        createdAt: new Date().toISOString(),
+        insuranceInfo: {
+          policyNumber: `PMFBY/${stateCode}/2026/${randomPolicyDigits}`,
+          schemeName: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+          sumInsuredPerAcre: 38500,
+          insurerName: "Agriculture Insurance Company of India (AIC)",
+          coverageStartDate: "2026-06-01",
+          coverageEndDate: "2026-11-30",
+          applicationId: `APP-PMFBY-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        },
+      };
+
+      setUser(offlineUser);
+      setUserRole("farmer");
+      setFarmerProfile(newProfile);
+      setOfficerProfile(null);
+      localStorage.setItem("cached_farmer_" + offlineUid, JSON.stringify(newProfile));
+      localStorage.setItem(
+        "agrishield_active_user",
+        JSON.stringify({ uid: offlineUid, email: offlineUser.email, role: "farmer" })
+      );
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const credential = await createUserWithEmailAndPassword(
         auth,
@@ -446,7 +703,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole("farmer");
       setFarmerProfile(newProfile);
       setOfficerProfile(null);
+      localStorage.setItem("cached_farmer_" + credential.user.uid, JSON.stringify(newProfile));
+      localStorage.setItem(
+        "agrishield_active_user",
+        JSON.stringify({ uid: credential.user.uid, email: input.email.trim(), role: "farmer" })
+      );
     } catch (err: any) {
+      const code = err.code || err.message || "";
+      if (
+        code.includes("auth/network-request-failed") ||
+        code.includes("offline") ||
+        code.includes("unavailable") ||
+        code.includes("auth/invalid-api-key") ||
+        code.includes("auth/api-key-not-valid") ||
+        code.includes("auth/configuration-not-found") ||
+        !isFirebaseConfigured
+      ) {
+        const offlineUid = `offline_${Date.now()}`;
+        const offlineUser = {
+          uid: offlineUid,
+          email: input.email.trim(),
+          displayName: input.name.trim(),
+        } as User;
+        const newFarmerId = await generateReadableFarmerId();
+        const stateCode = (input.state || "AP").substring(0, 2).toUpperCase();
+        const randomPolicyDigits = Math.floor(100000 + Math.random() * 900000);
+
+        const newProfile: FarmerProfile = {
+          id: newFarmerId,
+          farmerId: newFarmerId,
+          uid: offlineUid,
+          name: input.name.trim(),
+          email: input.email.trim().toLowerCase(),
+          phone: input.phone.trim(),
+          village: input.village.trim(),
+          district: input.district.trim(),
+          state: input.state.trim(),
+          preferredLanguage: input.preferredLanguage || "en",
+          role: "farmer",
+          aadharLastFour: input.aadharLastFour?.trim() || "",
+          createdAt: new Date().toISOString(),
+          insuranceInfo: {
+            policyNumber: `PMFBY/${stateCode}/2026/${randomPolicyDigits}`,
+            schemeName: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+            sumInsuredPerAcre: 38500,
+            insurerName: "Agriculture Insurance Company of India (AIC)",
+            coverageStartDate: "2026-06-01",
+            coverageEndDate: "2026-11-30",
+            applicationId: `APP-PMFBY-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          },
+        };
+
+        setUser(offlineUser);
+        setUserRole("farmer");
+        setFarmerProfile(newProfile);
+        setOfficerProfile(null);
+        localStorage.setItem("cached_farmer_" + offlineUid, JSON.stringify(newProfile));
+        localStorage.setItem(
+          "agrishield_active_user",
+          JSON.stringify({ uid: offlineUid, email: offlineUser.email, role: "farmer" })
+        );
+        setError(null);
+        setLoading(false);
+        return;
+      }
       const friendly = getFriendlyAuthErrorMessage(err);
       setError(friendly);
       throw new Error(friendly);
@@ -462,14 +782,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async (): Promise<void> => {
     setLoading(true);
     try {
+      localStorage.removeItem("agrishield_active_user");
       await signOut(auth);
+    } catch (err) {
+      console.error("Sign out error:", err);
+    } finally {
       setUser(null);
       setUserRole(null);
       setFarmerProfile(null);
       setOfficerProfile(null);
-    } catch (err) {
-      console.error("Sign out error:", err);
-    } finally {
       setLoading(false);
     }
   };
@@ -504,6 +825,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         clearError,
         login,
+        loginAsDemoFarmer,
         register,
         logout,
         updateFarmerProfile,

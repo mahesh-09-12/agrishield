@@ -18,7 +18,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister }) => {
-  const { login, loginAsOfficer, error, clearError, loading } = useAuth();
+  const { login, loginAsOfficer, loginAsDemoFarmer, error, clearError, loading } = useAuth();
   const { t } = useApp();
 
   const [email, setEmail] = useState<string>("");
@@ -162,15 +162,38 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister }) => {
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={handleOfficerLogin}
-              disabled={isSubmitting || loading}
-              className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-blue-300 rounded-lg shadow-2xs text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition cursor-pointer"
-            >
-              <Building2 className="h-3.5 w-3.5 text-blue-600" />
-              <span>{t.signInOfficer || "Sign In as Insurance Officer"}</span>
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={async () => {
+                  setLocalError(null);
+                  clearError();
+                  setIsSubmitting(true);
+                  try {
+                    await loginAsDemoFarmer();
+                  } catch (err: any) {
+                    setLocalError(err.message || "Failed demo farmer sign in");
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                disabled={isSubmitting || loading}
+                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-emerald-300 rounded-lg shadow-2xs text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition cursor-pointer"
+              >
+                <UserCheck className="h-3.5 w-3.5 text-emerald-700" />
+                <span>Demo Farmer (Ramesh)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOfficerLogin}
+                disabled={isSubmitting || loading}
+                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-blue-300 rounded-lg shadow-2xs text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition cursor-pointer"
+              >
+                <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                <span>{t.signInOfficer || "Insurance Officer"}</span>
+              </button>
+            </div>
           </form>
 
           {/* Switch to Register */}

@@ -8,23 +8,63 @@ const cleanEnv = (val?: string): string => {
   return val.replace(/^["']|["']$/g, "").trim();
 };
 
-const firebaseConfig = {
-  apiKey: cleanEnv(import.meta.env.VITE_FIREBASE_API_KEY),
-  authDomain: cleanEnv(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
-  projectId: cleanEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID),
-  storageBucket: cleanEnv(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
-  messagingSenderId: cleanEnv(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
-  appId: cleanEnv(import.meta.env.VITE_FIREBASE_APP_ID),
+const rawApiKey = cleanEnv(import.meta.env.VITE_FIREBASE_API_KEY);
+const rawProjectId = cleanEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID);
+
+// A valid Google/Firebase API key starts with AIza, contains no colons, and is typically 39 chars
+const isValidApiKey = (key: string): boolean => {
+  return Boolean(
+    key &&
+      !key.includes(":") &&
+      key.length >= 20 &&
+      !key.toLowerCase().includes("dummy") &&
+      !key.toLowerCase().includes("placeholder")
+  );
 };
 
 export const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey && firebaseConfig.projectId
+  isValidApiKey(rawApiKey) &&
+    rawProjectId &&
+    rawProjectId !== "agrishield-demo" &&
+    !rawProjectId.toLowerCase().includes("placeholder")
 );
+
+// Fallback safe dummy key that satisfies Firebase SDK syntax checks (non-empty and no colons)
+const safeApiKey = isValidApiKey(rawApiKey)
+  ? rawApiKey
+  : "AIzaSyAgriShieldDemoKeySafeForSDKInit0";
+
+const firebaseConfig = {
+  apiKey: safeApiKey,
+  authDomain: cleanEnv(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN) || "agrishield-demo.firebaseapp.com",
+  projectId: rawProjectId || "agrishield-demo",
+  storageBucket: cleanEnv(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET) || "agrishield-demo.appspot.com",
+  messagingSenderId: cleanEnv(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID) || "1234567890",
+  appId: cleanEnv(import.meta.env.VITE_FIREBASE_APP_ID) || "1:1234567890:web:abcdef123456",
+};
 
 // Initialize single Firebase App, Auth, Firestore, and Storage instances
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const auth: Auth = getAuth(app);
-export const storage = getStorage(app);
+
+let authInstance: Auth;
+try {
+  authInstance = getAuth(app);
+} catch (err) {
+  console.warn("Firebase Auth getAuth error, using fallback instance:", err);
+  authInstance = {
+    currentUser: null,
+  } as unknown as Auth;
+}
+export const auth: Auth = authInstance;
+
+let storageInstance: any;
+try {
+  storageInstance = getStorage(app);
+} catch (err) {
+  console.warn("Firebase Storage getStorage error:", err);
+  storageInstance = {} as any;
+}
+export const storage = storageInstance;
 
 let firestoreInstance: Firestore;
 try {

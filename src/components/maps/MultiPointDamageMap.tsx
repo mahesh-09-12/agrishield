@@ -24,13 +24,19 @@ export const MultiPointDamageMap: React.FC<MultiPointDamageMapProps> = ({
 
   const getMarkerColor = (severity?: DamageSeverity): { bg: string; border: string; label: string } => {
     switch (severity) {
-      case "Healthy":
+      case "NONE":
         return { bg: "#10b981", border: "#047857", label: "Healthy" };
-      case "Moderate":
+      case "LOW":
+        return { bg: "#10b981", border: "#047857", label: "Low Damage" };
+      case "MODERATE":
         return { bg: "#f59e0b", border: "#d97706", label: "Moderate" };
-      case "Severe":
-      default:
+      case "HIGH":
+      case "SEVERE":
         return { bg: "#ef4444", border: "#b91c1c", label: "Severe" };
+      case "NOT APPLICABLE":
+      case "UNKNOWN":
+      default:
+        return { bg: "#64748b", border: "#475569", label: "Not applicable" };
     }
   };
 
@@ -87,7 +93,10 @@ export const MultiPointDamageMap: React.FC<MultiPointDamageMapProps> = ({
     markersGroup.clearLayers();
 
     evidenceList.forEach((ev, idx) => {
-      const severity = ev.aiAssessment?.damageSeverity || ev.damageClassification || "Moderate";
+      const isInvalid = ev.aiAssessment?.finalStatus === "INVALID EVIDENCE" || ev.damageClassification === "NOT APPLICABLE";
+      const severity = isInvalid
+        ? "NOT APPLICABLE"
+        : ev.aiAssessment?.damageSeverity || ev.damageClassification || "UNKNOWN";
       const colors = getMarkerColor(severity);
       const isSelected = selectedEvidenceId === ev.id || activeEvidence?.id === ev.id;
 
@@ -205,14 +214,20 @@ export const MultiPointDamageMap: React.FC<MultiPointDamageMapProps> = ({
                   <span className="text-slate-500 text-[11px]">Damage:</span>
                   <span
                     className={`font-semibold px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider ${
-                      activeEvidence.damageClassification === "Healthy"
+                      activeEvidence.damageClassification === "NOT APPLICABLE"
+                        ? "bg-slate-100 text-slate-700 border border-slate-300"
+                        : activeEvidence.damageClassification === "NONE"
                         ? "bg-emerald-100 text-emerald-800"
-                        : activeEvidence.damageClassification === "Moderate"
+                        : activeEvidence.damageClassification === "MODERATE"
+                        ? "bg-amber-100 text-amber-800"
+                        : activeEvidence.damageClassification === "UNKNOWN"
                         ? "bg-amber-100 text-amber-800"
                         : "bg-rose-100 text-rose-800"
                     }`}
                   >
-                    {activeEvidence.damageClassification || "Moderate"}
+                    {activeEvidence.damageClassification === "NOT APPLICABLE"
+                      ? "Not applicable"
+                      : activeEvidence.damageClassification || "Not applicable"}
                   </span>
                 </div>
 
@@ -230,7 +245,7 @@ export const MultiPointDamageMap: React.FC<MultiPointDamageMapProps> = ({
                       Gemini AI ({activeEvidence.aiAssessment.confidence}% conf)
                     </div>
                     <p className="text-[10px] text-slate-700 line-clamp-2 leading-relaxed">
-                      {activeEvidence.aiAssessment.explanation}
+                      {activeEvidence.aiAssessment.reason}
                     </p>
                   </div>
                 )}

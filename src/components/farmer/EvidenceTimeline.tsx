@@ -143,7 +143,7 @@ export const EvidenceTimeline: React.FC<{
               <div
                 className={`absolute -left-6 sm:-left-8 top-1.5 h-5 w-5 rounded-full border-2 border-white shadow flex items-center justify-center text-white text-[10px] font-bold ${
                   isPost
-                    ? ev.damageClassification === "Severe"
+                    ? ev.damageClassification === "SEVERE"
                       ? "bg-rose-600"
                       : "bg-amber-500"
                     : "bg-emerald-600"
@@ -201,26 +201,52 @@ export const EvidenceTimeline: React.FC<{
 
                     {/* AI Assessment Callout */}
                     {ev.aiAssessment && (
-                      <div className="rounded-md bg-emerald-50/70 border border-emerald-200/80 p-2 space-y-0.5">
+                      <div
+                        className={`rounded-md p-2 space-y-0.5 border ${
+                          ev.aiAssessment.finalStatus === "INVALID EVIDENCE"
+                            ? "bg-rose-50/80 border-rose-200"
+                            : ev.aiAssessment.finalStatus === "NEEDS REVIEW"
+                            ? "bg-amber-50/80 border-amber-200"
+                            : "bg-emerald-50/70 border-emerald-200/80"
+                        }`}
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-[10px] text-emerald-900 flex items-center gap-1">
-                            <Sparkles className="h-3 w-3 text-emerald-600" />
-                            AI Visual Diagnosis ({ev.aiAssessment.confidence}% confidence)
+                          <span
+                            className={`font-bold text-[10px] flex items-center gap-1 ${
+                              ev.aiAssessment.finalStatus === "INVALID EVIDENCE"
+                                ? "text-rose-900"
+                                : ev.aiAssessment.finalStatus === "NEEDS REVIEW"
+                                ? "text-amber-900"
+                                : "text-emerald-900"
+                            }`}
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            {ev.aiAssessment.finalStatus === "INVALID EVIDENCE"
+                              ? "Evidence Verification: Invalid Image"
+                              : `AI Visual Diagnosis (${ev.aiAssessment.confidence}% confidence)`}
                           </span>
                           <span
                             className={`font-bold text-[9px] px-1.5 py-0.5 rounded ${
-                              ev.aiAssessment.damageSeverity === "Healthy"
+                              ev.aiAssessment.finalStatus === "INVALID EVIDENCE"
+                                ? "bg-rose-100 text-rose-800 border border-rose-200"
+                                : ev.aiAssessment.finalStatus === "NEEDS REVIEW"
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : ev.aiAssessment.damageSeverity === "NONE"
                                 ? "bg-emerald-200 text-emerald-900"
-                                : ev.aiAssessment.damageSeverity === "Moderate"
+                                : ev.aiAssessment.damageSeverity === "MODERATE"
                                 ? "bg-amber-200 text-amber-900"
                                 : "bg-rose-200 text-rose-900"
                             }`}
                           >
-                            {ev.aiAssessment.damageSeverity}
+                            {ev.aiAssessment.finalStatus === "INVALID EVIDENCE"
+                              ? "INVALID EVIDENCE"
+                              : ev.aiAssessment.finalStatus === "NEEDS REVIEW"
+                              ? "NEEDS REVIEW"
+                              : ev.aiAssessment.damageSeverity}
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-600 leading-normal">
-                          {ev.aiAssessment.explanation}
+                          {ev.aiAssessment.reason}
                         </p>
                       </div>
                     )}
