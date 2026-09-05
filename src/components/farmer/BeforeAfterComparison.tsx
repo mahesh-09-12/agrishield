@@ -7,6 +7,19 @@ interface BeforeAfterComparisonProps {
   postDisasterEvidence: EvidenceRecord[];
 }
 
+const formatGpsCoordinates = (lat?: number | null, lng?: number | null) => {
+  if (
+    lat == null ||
+    lng == null ||
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng)
+  ) {
+    return "Not available";
+  }
+
+  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+};
+
 export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
   preDisasterEvidence,
   postDisasterEvidence,
@@ -90,7 +103,7 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
               />
               <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[10px] rounded px-2 py-0.5 flex items-center justify-between">
                 <span>{new Date(preItem.timestamp).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
-                <span>GPS: {preItem.lat.toFixed(4)}, {preItem.lng.toFixed(4)}</span>
+                <span>GPS: {formatGpsCoordinates(preItem.lat, preItem.lng)}</span>
               </div>
             </div>
 
@@ -125,7 +138,7 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
               />
               <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[10px] rounded px-2 py-0.5 flex items-center justify-between">
                 <span>{new Date(postItem.timestamp).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
-                <span>GPS: {postItem.lat.toFixed(4)}, {postItem.lng.toFixed(4)}</span>
+                <span>GPS: {formatGpsCoordinates(postItem.lat, postItem.lng)}</span>
               </div>
             </div>
 
