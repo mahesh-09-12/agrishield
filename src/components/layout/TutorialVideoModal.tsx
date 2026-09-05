@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Play,
   Pause,
@@ -197,14 +197,19 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
 }) => {
   const { language } = useApp();
   const { speak, isSpeaking, stopSpeaking } = useVoice();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [activeChapterIdx, setActiveChapterIdx] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
+  const [videoError, setVideoError] = useState<boolean>(false);
 
   const currentChapter = TUTORIAL_CHAPTERS[activeChapterIdx];
+  const isChapter1 = activeChapterIdx === 0;
 
-  // Auto progression simulated video timeline
+  // Auto progression simulated video timeline for non-video chapters
   useEffect(() => {
+    if (isChapter1) return;
+
     let interval: any;
     if (isPlaying) {
       interval = setInterval(() => {
@@ -220,16 +225,45 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
       clearInterval(interval);
     }
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isChapter1, isPlaying]);
 
   useEffect(() => {
     setProgress(0);
     setIsPlaying(false);
+    setVideoError(false);
+
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
   }, [activeChapterIdx]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isChapter1) return;
+
+    if (isPlaying) {
+      video.play().catch(() => setIsPlaying(false));
+    } else {
+      video.pause();
+    }
+  }, [isChapter1, isPlaying]);
 
   if (!isOpen) return null;
 
   const handlePlayToggle = () => {
+    if (isChapter1 && videoRef.current) {
+      if (videoRef.current.paused) {
+        setIsPlaying(true);
+        setProgress((current) => (current >= 100 ? 0 : current));
+        videoRef.current.play().catch(() => setIsPlaying(false));
+      } else {
+        setIsPlaying(false);
+        videoRef.current.pause();
+      }
+      return;
+    }
+
     if (isPlaying) {
       setIsPlaying(false);
       stopSpeaking();
@@ -306,7 +340,40 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
 
               {/* Central Graphic Simulation based on chapter */}
               <div className="my-4 sm:my-6 flex flex-col items-center justify-center text-center space-y-3 sm:space-y-4 z-10">
-                {currentChapter.visualScene === "navigation" && (
+                {isChapter1 ? (
+                  videoError ? (
+                    <div className="w-full max-w-lg mx-auto rounded-2xl border border-amber-500/40 bg-amber-950/30 p-6 text-center text-amber-100">
+                      <div className="mb-2 text-3xl">🎬</div>
+                      <p className="font-semibold">Tutorial video not available.</p>
+                      <p className="mt-1 text-sm text-amber-200/80">Please place the Chapter 1 video at /tutorials/chapter1-navigation.mp4.</p>
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-2xl mx-auto">
+                      <video
+                        ref={videoRef}
+                        key={activeChapterIdx}
+                        className="w-full max-h-[220px] sm:max-h-[300px] rounded-xl border border-slate-700 bg-black shadow-lg"
+                        src="/tutorials/chapter1-navigation.mp4"
+                        controls
+                        playsInline
+                        preload="metadata"
+                        onError={() => setVideoError(true)}
+                        onLoadedMetadata={() => setVideoError(false)}
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                        onEnded={() => {
+                          setIsPlaying(false);
+                          setProgress(100);
+                        }}
+                        onTimeUpdate={() => {
+                          const video = videoRef.current;
+                          if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+                          setProgress((video.currentTime / video.duration) * 100);
+                        }}
+                      />
+                    </div>
+                  )
+                ) : currentChapter.visualScene === "navigation" ? (
                   <div className="space-y-2.5 sm:space-y-3 animate-pulse">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-300 shadow-lg mx-auto">
                       <Tv className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -318,9 +385,7 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                       </p>
                     </div>
                   </div>
-                )}
-
-                {currentChapter.visualScene === "fieldMap" && (
+                ) : currentChapter.visualScene === "fieldMap" ? (
                   <div className="space-y-2.5 sm:space-y-3">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center text-blue-300 shadow-lg mx-auto">
                       <MapPin className="w-8 h-8 sm:w-10 sm:h-10 animate-bounce" />
@@ -332,9 +397,7 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                       </p>
                     </div>
                   </div>
-                )}
-
-                {currentChapter.visualScene === "cropForm" && (
+                ) : currentChapter.visualScene === "cropForm" ? (
                   <div className="space-y-2.5 sm:space-y-3">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-lg mx-auto">
                       <FileText className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -346,9 +409,7 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                       </p>
                     </div>
                   </div>
-                )}
-
-                {currentChapter.visualScene === "evidenceCapture" && (
+                ) : currentChapter.visualScene === "evidenceCapture" ? (
                   <div className="space-y-2.5 sm:space-y-3">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-rose-500/20 border-2 border-rose-400 flex items-center justify-center text-rose-300 shadow-lg mx-auto">
                       <Camera className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -363,9 +424,7 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                       </div>
                     </div>
                   </div>
-                )}
-
-                {currentChapter.visualScene === "disasterReport" && (
+                ) : currentChapter.visualScene === "disasterReport" ? (
                   <div className="space-y-2.5 sm:space-y-3">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-teal-500/20 border-2 border-teal-400 flex items-center justify-center text-teal-300 shadow-lg mx-auto">
                       <HelpCircle className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -377,9 +436,7 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                       </p>
                     </div>
                   </div>
-                )}
-
-                {currentChapter.visualScene === "claimDossier" && (
+                ) : (
                   <div className="space-y-2.5 sm:space-y-3">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center text-purple-300 shadow-lg mx-auto">
                       <BarChart2 className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -392,6 +449,7 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                     </div>
                   </div>
                 )}
+
               </div>
 
               {/* Subtitles / Audio Transcript Box */}
