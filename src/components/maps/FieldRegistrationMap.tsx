@@ -210,11 +210,16 @@ export const FieldRegistrationMap: React.FC<FieldRegistrationMapProps> = ({
             avgLat = Number((avgLat / bestSamples.length).toFixed(7));
             avgLng = Number((avgLng / bestSamples.length).toFixed(7));
 
-            const finalAcc = Number(Math.max(0.5, bestAcc).toFixed(1));
+             const finalAcc = Number(Math.max(0.5, bestAcc).toFixed(1));
 
             setCurrentGPS([avgLat, avgLng]);
             setGpsAccuracy(finalAcc);
-            setGpsStatus(`Exact RTK Lock (±${finalAcc}m precision)`);
+
+            if (finalAcc > 50) {
+              setGpsStatus(`⚠️ Low Accuracy: ±${finalAcc}m (>50m). Please move outdoors or retry.`);
+            } else {
+              setGpsStatus(`Exact RTK Lock (±${finalAcc}m precision)`);
+            }
 
             if (mapInstanceRef.current) {
               mapInstanceRef.current.flyTo([avgLat, avgLng], 20); // High zoom for exact placement
@@ -233,7 +238,7 @@ export const FieldRegistrationMap: React.FC<FieldRegistrationMapProps> = ({
 
               const marker = L.marker([avgLat, avgLng], { icon: gpsIcon, draggable: true })
                 .addTo(mapInstanceRef.current)
-                .bindPopup(`<b>Exact Location Locked</b><br>Lat: ${avgLat}, Lng: ${avgLng}<br><i>Drag pin if micro-adjustment needed</i>`)
+                .bindPopup(`<b>Exact Location Locked</b><br>Lat: ${avgLat}, Lng: ${avgLng}<br>Accuracy: ±${finalAcc}m<br><i>Drag pin if micro-adjustment needed</i>`)
                 .openPopup();
 
               marker.on("dragend", (event: L.LeafletEvent) => {
@@ -250,36 +255,10 @@ export const FieldRegistrationMap: React.FC<FieldRegistrationMapProps> = ({
         },
         (err) => {
           setIsSampling(false);
-          console.warn("GPS warning:", err);
-          const fallbackLat = 16.5122;
-          const fallbackLng = 80.6998;
-          setCurrentGPS([fallbackLat, fallbackLng]);
-          setGpsAccuracy(0.8);
-          setGpsStatus("Exact RTK Lock (±0.8m)");
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.flyTo([fallbackLat, fallbackLng], 20);
-            if (gpsMarkerRef.current) gpsMarkerRef.current.remove();
-
-            const gpsIcon = L.divIcon({
-              className: "gps-marker-draggable",
-              html: `<div class="relative flex items-center justify-center cursor-pointer"><div class="absolute w-10 h-10 bg-emerald-400 rounded-full animate-ping opacity-75"></div><div class="w-6 h-6 bg-emerald-600 rounded-full border-2 border-white shadow-xl flex items-center justify-center text-white text-[10px] font-bold">📍</div></div>`,
-              iconSize: [36, 36],
-              iconAnchor: [18, 18],
-            });
-
-            const marker = L.marker([fallbackLat, fallbackLng], { icon: gpsIcon, draggable: true })
-              .addTo(mapInstanceRef.current)
-              .bindPopup(`<b>Exact Location</b><br>Lat: ${fallbackLat}, Lng: ${fallbackLng}`)
-              .openPopup();
-
-            marker.on("dragend", (event: L.LeafletEvent) => {
-              const markerPos = event.target.getLatLng();
-              setCurrentGPS([Number(markerPos.lat.toFixed(7)), Number(markerPos.lng.toFixed(7))]);
-            });
-            gpsMarkerRef.current = marker;
-          }
+          console.warn("GPS error:", err);
+          setGpsStatus("GPS Fix failed or timed out. Please ensure location permissions are granted and retry.");
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     };
 

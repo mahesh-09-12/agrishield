@@ -117,8 +117,11 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = (e) => {
-        console.error("Speech synthesis error:", e);
+      utterance.onerror = (e: any) => {
+        // Canceled or interrupted speech errors are normal when switching chapters or closing modals
+        if (e?.error !== 'canceled' && e?.error !== 'interrupted') {
+          console.warn("Speech synthesis notice:", e?.error || e);
+        }
         setIsSpeaking(false);
       };
 

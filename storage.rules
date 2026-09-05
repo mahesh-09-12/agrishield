@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to read tutorial videos
+    match /tutorialVideos/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Cannot be uploaded/modified from normal client application
+    }
+
+    // Default rule for other paths requiring authentication
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

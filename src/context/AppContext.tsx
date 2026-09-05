@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import {
   UserRole,
   LanguageCode,
@@ -127,6 +128,7 @@ interface AppContextType {
   evidenceCompletenessPercent: number;
   isEvidenceOutdated: boolean;
   reloadFarmerData: () => Promise<void>;
+  updateCropStage: (cropId: string, newStage: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -760,6 +762,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return record;
   };
 
+  const updateCropStage = async (cropId: string, newStage: string) => {
+    setCrops((prev) =>
+      prev.map((c) => (c.id === cropId ? { ...c, currentStage: newStage as CropStage } : c))
+    );
+    const currentUid = user?.uid || auth.currentUser?.uid;
+    if (currentUid && activeFieldId) {
+      try {
+        const cropRef = doc(db, `farmers/${currentUid}/fields/${activeFieldId}/crops`, cropId);
+        await setDoc(cropRef, { currentStage: newStage }, { merge: true });
+      } catch (err) {
+        console.warn("Failed to update crop stage in Firestore:", err);
+      }
+    }
+  };
+
   const registerFieldAndCrop = async (
     fieldInput: {
       name: string;
@@ -915,43 +932,76 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const currentDisaster = disasterReports.find((d) => d.fieldId === evidenceData.fieldId);
 
     let uploadFailedOffline = false;
-    // 1. Upload image to Firebase Storage if user is authenticated
     let imageUrl = evidenceData.imageUrl;
+
+    // Helper timeout wrapper
+    const withTimeout = async <T,>(promise: Promise<T>, ms = 4000): Promise<T | null> => {
+      let timeoutId: NodeJS.Timeout;
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("Operation timed out")), ms);
+      });
+      try {
+        const result = await Promise.race([promise, timeoutPromise]);
+        clearTimeout(timeoutId!);
+        return result;
+      } catch (err) {
+        clearTimeout(timeoutId!);
+        throw err;
+      }
+    };
+
+    // 1. Upload image to Firebase Storage if authenticated
     if (user?.uid && evidenceData.fieldId && evidenceData.cropId) {
       try {
         if (evidenceData.imageFileOrDataUrl) {
-          imageUrl = await uploadEvidenceImage(
-            user.uid,
-            evidenceData.fieldId,
-            evidenceData.cropId,
-            evidenceId,
-            evidenceData.imageFileOrDataUrl
+          const res = await withTimeout(
+            uploadEvidenceImage(
+              user.uid,
+              evidenceData.fieldId,
+              evidenceData.cropId,
+              evidenceId,
+              evidenceData.imageFileOrDataUrl
+            ),
+            5000
           );
+          if (res) imageUrl = res;
         } else if (evidenceData.imageUrl && evidenceData.imageUrl.startsWith("data:")) {
-          imageUrl = await uploadEvidenceImage(
-            user.uid,
-            evidenceData.fieldId,
-            evidenceData.cropId,
-            evidenceId,
-            evidenceData.imageUrl
+          const res = await withTimeout(
+            uploadEvidenceImage(
+              user.uid,
+              evidenceData.fieldId,
+              evidenceData.cropId,
+              evidenceId,
+              evidenceData.imageUrl
+            ),
+            5000
           );
+          if (res) imageUrl = res;
         }
       } catch (err) {
-        console.warn("Firebase Storage upload failed, queueing offline:", err);
+        console.warn("Firebase Storage upload failed or timed out, using local data/preview URL:", err);
         uploadFailedOffline = true;
       }
     }
 
-    // AI assessment if not provided
+    // AI assessment if not provided (with timeout)
     let aiAssessment = evidenceData.aiAssessment;
     if (!aiAssessment && imageUrl) {
-      aiAssessment = await assessImageAI(
-        imageUrl,
-        evidenceData.cropStage,
-        evidenceData.cropStage,
-        currentDisaster?.disasterType || "Heavy Rainfall",
-        evidenceData.evidenceType
-      );
+      try {
+        const aiRes = await withTimeout(
+          assessImageAI(
+            imageUrl,
+            evidenceData.cropStage,
+            evidenceData.cropStage,
+            currentDisaster?.disasterType || "Heavy Rainfall",
+            evidenceData.evidenceType
+          ),
+          4000
+        );
+        if (aiRes) aiAssessment = aiRes;
+      } catch (err) {
+        console.warn("AI assessment timed out or failed:", err);
+      }
     }
 
     const damageClassification: DamageSeverity =
@@ -988,13 +1038,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 2. Save metadata to Firestore
     let firestoreFailedOffline = false;
-    if (user?.uid && evidenceData.fieldId && evidenceData.cropId && !uploadFailedOffline) {
+    if (user?.uid && evidenceData.fieldId && evidenceData.cropId) {
       const firestoreEvidence: FirestoreEvidence = {
         evidenceId,
         fieldId: evidenceData.fieldId,
         cropId: evidenceData.cropId,
         type: evidenceData.evidenceType || "growth",
-        imageUrl, // Storage download URL (not base64)
+        imageUrl,
         latitude: evidenceData.lat,
         longitude: evidenceData.lng,
         capturedAt,
@@ -1008,22 +1058,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
 
       try {
-        await saveEvidence(
-          user.uid,
-          evidenceData.fieldId,
-          evidenceData.cropId,
-          firestoreEvidence
+        await withTimeout(
+          saveEvidence(
+            user.uid,
+            evidenceData.fieldId,
+            evidenceData.cropId,
+            firestoreEvidence
+          ),
+          4000
         );
       } catch (err) {
-        console.warn("Firestore saveEvidence error, queueing offline:", err);
+        console.warn("Firestore saveEvidence error or timeout:", err);
         firestoreFailedOffline = true;
       }
     }
 
     if (!isOnline || uploadFailedOffline || firestoreFailedOffline) {
-      await saveOfflineEvidence(completeRecord);
-      setPendingSyncCount((prev) => prev + 1);
-      setSyncStatus("offline");
+      try {
+        await saveOfflineEvidence(completeRecord);
+        setPendingSyncCount((prev) => prev + 1);
+        setSyncStatus("offline");
+      } catch (offlineErr) {
+        console.warn("Offline save error:", offlineErr);
+      }
     }
 
     const updatedList = [...evidenceList, completeRecord];
@@ -1448,6 +1505,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         evidenceCompletenessPercent,
         isEvidenceOutdated,
         reloadFarmerData,
+        updateCropStage,
       }}
     >
       {children}

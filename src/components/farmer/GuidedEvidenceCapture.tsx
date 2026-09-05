@@ -99,20 +99,24 @@ export const GuidedEvidenceCapture: React.FC<{ onComplete?: () => void }> = ({ o
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const accuracy = Math.round(pos.coords.accuracy);
         setGpsCoords({
           lat: Number(pos.coords.latitude.toFixed(6)),
           lng: Number(pos.coords.longitude.toFixed(6)),
-          accuracy: Math.round(pos.coords.accuracy),
+          accuracy: accuracy,
         });
         setIsLocating(false);
+        if (accuracy > 50) {
+          setErrorMessage(`⚠️ Warning: GPS accuracy is low (±${accuracy}m > 50m). Please move outdoors or retry.`);
+        }
         cameraInputRef.current?.click();
       },
       (err) => {
         console.warn("GPS error:", err);
         setIsLocating(false);
-        setErrorMessage(t["gpsPermissionRequired"] || "Location permission is required.");
+        setErrorMessage(t["gpsPermissionRequired"] || "Location acquisition failed or timed out. Please check permissions and retry.");
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -142,15 +146,20 @@ export const GuidedEvidenceCapture: React.FC<{ onComplete?: () => void }> = ({ o
       if (!gpsCoords && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
+            const accuracy = Math.round(pos.coords.accuracy);
             setGpsCoords({
               lat: Number(pos.coords.latitude.toFixed(6)),
               lng: Number(pos.coords.longitude.toFixed(6)),
-              accuracy: Math.round(pos.coords.accuracy),
+              accuracy: accuracy,
             });
+            if (accuracy > 50) {
+              setErrorMessage(`⚠️ Warning: GPS accuracy is low (±${accuracy}m > 50m).`);
+            }
           },
           () => {
             setErrorMessage(t["gpsPermissionRequired"] || "Location permission is required.");
-          }
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       }
 
