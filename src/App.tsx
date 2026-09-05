@@ -6,7 +6,6 @@ import { translations } from "./lib/i18n";
 import { Header } from "./components/layout/Header";
 import { FarmerDashboard } from "./components/farmer/FarmerDashboard";
 import { OfficerDashboard } from "./components/officer/OfficerDashboard";
-import { WalkthroughModal } from "./components/layout/WalkthroughModal";
 import { TutorialVideoModal } from "./components/layout/TutorialVideoModal";
 import { VoiceAssistantWidget } from "./components/layout/VoiceAssistantWidget";
 import { LoginPage } from "./components/auth/LoginPage";
@@ -16,7 +15,6 @@ import { Loader2 } from "lucide-react";
 const MainContent: React.FC = () => {
   const { role, isOnline, t } = useApp();
   const { registerActionDispatcher } = useVoice();
-  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState<boolean>(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState<boolean>(false);
   // Voice-triggered modal signals: FarmerDashboard reads these via callbacks
   const [voiceAction, setVoiceAction] = useState<string | null>(null);
@@ -46,7 +44,6 @@ const MainContent: React.FC = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-200 relative">
       {/* High Density Header */}
       <Header
-        onOpenWalkthrough={() => setIsWalkthroughOpen(true)}
         onOpenTutorial={() => setIsTutorialOpen(true)}
       />
 
@@ -78,12 +75,6 @@ const MainContent: React.FC = () => {
           {t["appVersion"] || "AGRI-SHIELD-V2.4"} &bull; {t["smartCropInsuranceSystem"] || "SMART CROP INSURANCE EVIDENCE SYSTEM"}
         </div>
       </footer>
-
-      {/* Interactive Walkthrough Modal */}
-      <WalkthroughModal
-        isOpen={isWalkthroughOpen}
-        onClose={() => setIsWalkthroughOpen(false)}
-      />
 
       {/* Step-by-Step Guiding Tutorial Video Modal */}
       <TutorialVideoModal

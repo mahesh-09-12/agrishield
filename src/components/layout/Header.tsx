@@ -20,9 +20,8 @@ import {
 } from "lucide-react";
 
 export const Header: React.FC<{
-  onOpenWalkthrough: () => void;
   onOpenTutorial?: () => void;
-}> = ({ onOpenWalkthrough, onOpenTutorial }) => {
+}> = ({ onOpenTutorial }) => {
   const {
     role,
     language,
@@ -118,17 +117,7 @@ export const Header: React.FC<{
             <span className="hidden md:inline">{isListening ? "Listening..." : "Voice Guide"}</span>
           </button>
 
-          {/* Interactive Guide Pill (Farmer only) */}
-          {!isOfficer && (
-            <button
-              type="button"
-              onClick={onOpenWalkthrough}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">{t.guide || "Guide"}</span>
-            </button>
-          )}
+
 
           {/* Language Selector */}
           <div className="relative flex items-center">
@@ -217,13 +206,7 @@ export const Header: React.FC<{
                 </button>
               )}
 
-              {/* Guide */}
-              {!isOfficer && (
-                <button onClick={() => { onOpenWalkthrough(); setMobileMenuOpen(false); }} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50">
-                  <Sparkles className="h-4 w-4 text-emerald-600" />
-                  <div className="text-sm font-semibold">{t.guide || "Guide"}</div>
-                </button>
-              )}
+
 
               {/* Language + toggles */}
               <div className="flex items-center gap-2">

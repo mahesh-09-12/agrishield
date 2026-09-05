@@ -254,40 +254,40 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-slate-900 rounded-3xl max-w-4xl w-full text-white shadow-2xl border border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+      <div className="bg-slate-900 rounded-2xl sm:rounded-3xl max-w-4xl w-full text-white shadow-2xl border border-slate-800 flex flex-col my-auto max-h-[96vh] sm:max-h-[90vh] overflow-hidden">
         {/* Modal Top Header */}
-        <div className="bg-slate-950 px-5 py-3.5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">
-              <Tv className="w-5 h-5" />
+        <div className="bg-slate-950 px-3 sm:px-5 py-3 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shrink-0">
+              <Tv className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <span>{t("modalTitle", language)}</span>
-                <span className="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full hidden sm:inline">Interactive</span>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2 truncate">
+                <span className="truncate">{t("modalTitle", language)}</span>
+                <span className="text-[10px] sm:text-xs bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full shrink-0 hidden sm:inline">Interactive</span>
               </h3>
-              <p className="text-xs text-slate-400">{t("modalSub", language)}</p>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">{t("modalSub", language)}</p>
             </div>
           </div>
 
           <button
             onClick={() => { stopSpeaking(); onClose(); }}
-            className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition"
+            className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Video Player & Main Body */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 overflow-y-auto flex-1">
           {/* Left / Top: Interactive Simulated Screen Canvas (8 cols) */}
-          <div className="lg:col-span-8 bg-slate-950 p-4 flex flex-col justify-between min-h-[320px] sm:min-h-[400px] border-r border-slate-800 relative">
+          <div className="lg:col-span-8 bg-slate-950 p-3 sm:p-4 flex flex-col justify-between min-h-[260px] sm:min-h-[380px] border-b lg:border-b-0 lg:border-r border-slate-800 relative">
             {/* Visual Simulated Screen Frame */}
-            <div className="relative flex-1 rounded-2xl bg-gradient-to-br from-slate-900 to-emerald-950/40 border border-slate-800 p-6 flex flex-col justify-between overflow-hidden shadow-inner">
+            <div className="relative flex-1 rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-900 to-emerald-950/40 border border-slate-800 p-4 sm:p-6 flex flex-col justify-between overflow-hidden shadow-inner">
               {/* Top Video Status Badge */}
-              <div className="flex items-center justify-between z-10">
-                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-700/50 px-3 py-1 rounded-full flex items-center gap-1.5">
+              <div className="flex items-center justify-between z-10 gap-2">
+                <span className="text-[10px] sm:text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-700/50 px-2.5 sm:px-3 py-1 rounded-full flex items-center gap-1.5 shrink-0">
                   <span className={`w-2 h-2 rounded-full ${isPlaying ? "bg-red-500 animate-ping" : "bg-emerald-400"}`} />
                   {isPlaying ? t("playing", language) : t("ready", language)}
                 </span>
@@ -297,23 +297,23 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                     const textToNarrate = currentChapter.narration[language] || currentChapter.narration.en;
                     speak(textToNarrate);
                   }}
-                  className="flex items-center gap-1.5 text-xs bg-slate-800/80 hover:bg-slate-700 text-emerald-300 border border-slate-700 px-2.5 py-1 rounded-lg transition"
+                  className="flex items-center gap-1 text-[11px] sm:text-xs bg-slate-800/80 hover:bg-slate-700 text-emerald-300 border border-slate-700 px-2 sm:px-2.5 py-1 rounded-lg transition shrink-0"
                 >
                   <Volume2 className="w-3.5 h-3.5" />
-                  <span>{t("listenAudio", language)}</span>
+                  <span className="hidden xs:inline">{t("listenAudio", language)}</span>
                 </button>
               </div>
 
               {/* Central Graphic Simulation based on chapter */}
-              <div className="my-6 flex flex-col items-center justify-center text-center space-y-4 z-10">
+              <div className="my-4 sm:my-6 flex flex-col items-center justify-center text-center space-y-3 sm:space-y-4 z-10">
                 {currentChapter.visualScene === "navigation" && (
-                  <div className="space-y-3 animate-pulse">
-                    <div className="w-20 h-20 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-300 shadow-lg mx-auto">
-                      <Tv className="w-10 h-10" />
+                  <div className="space-y-2.5 sm:space-y-3 animate-pulse">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-300 shadow-lg mx-auto">
+                      <Tv className="w-8 h-8 sm:w-10 sm:h-10" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-lg font-bold text-white">AgriShield Interface Navigation</h4>
-                      <p className="text-xs text-slate-300 max-w-md">
+                      <h4 className="text-base sm:text-lg font-bold text-white">AgriShield Interface Navigation</h4>
+                      <p className="text-[11px] sm:text-xs text-slate-300 max-w-md px-2">
                         Header bar menu &bull; Language selector &bull; Farmer profile &bull; Dashboard view
                       </p>
                     </div>
@@ -321,13 +321,13 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                 )}
 
                 {currentChapter.visualScene === "fieldMap" && (
-                  <div className="space-y-3">
-                    <div className="w-20 h-20 rounded-2xl bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center text-blue-300 shadow-lg mx-auto">
-                      <MapPin className="w-10 h-10 animate-bounce" />
+                  <div className="space-y-2.5 sm:space-y-3">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center text-blue-300 shadow-lg mx-auto">
+                      <MapPin className="w-8 h-8 sm:w-10 sm:h-10 animate-bounce" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-lg font-bold text-white">Interactive Cadastral Boundary Drawing</h4>
-                      <p className="text-xs text-emerald-300 font-mono">
+                      <h4 className="text-base sm:text-lg font-bold text-white">Interactive Cadastral Boundary Drawing</h4>
+                      <p className="text-[11px] sm:text-xs text-emerald-300 font-mono px-2">
                         Polygon Area: 2.35 Acres &bull; Sy.No: 142/3B &bull; Soil: Black Cotton
                       </p>
                     </div>
@@ -335,13 +335,13 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                 )}
 
                 {currentChapter.visualScene === "cropForm" && (
-                  <div className="space-y-3">
-                    <div className="w-20 h-20 rounded-2xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-lg mx-auto">
-                      <FileText className="w-10 h-10" />
+                  <div className="space-y-2.5 sm:space-y-3">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-lg mx-auto">
+                      <FileText className="w-8 h-8 sm:w-10 sm:h-10" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-lg font-bold text-white">Sown Crop & Variety Selection</h4>
-                      <p className="text-xs text-amber-200">
+                      <h4 className="text-base sm:text-lg font-bold text-white">Sown Crop & Variety Selection</h4>
+                      <p className="text-[11px] sm:text-xs text-amber-200 px-2">
                         Crop: Rice / Paddy &bull; Variety: BPT 5204 &bull; Custom "Other" options enabled!
                       </p>
                     </div>
@@ -349,13 +349,13 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                 )}
 
                 {currentChapter.visualScene === "evidenceCapture" && (
-                  <div className="space-y-3">
-                    <div className="w-20 h-20 rounded-2xl bg-rose-500/20 border-2 border-rose-400 flex items-center justify-center text-rose-300 shadow-lg mx-auto">
-                      <Camera className="w-10 h-10" />
+                  <div className="space-y-2.5 sm:space-y-3">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-rose-500/20 border-2 border-rose-400 flex items-center justify-center text-rose-300 shadow-lg mx-auto">
+                      <Camera className="w-8 h-8 sm:w-10 sm:h-10" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-lg font-bold text-white">4-Step Guided Post-Disaster Photo Capture</h4>
-                      <div className="flex gap-2 justify-center text-[10px]">
+                      <h4 className="text-base sm:text-lg font-bold text-white">4-Step Guided Post-Disaster Photo Capture</h4>
+                      <div className="flex flex-wrap gap-1.5 justify-center text-[10px] px-2">
                         <span className="bg-slate-800 px-2 py-0.5 rounded text-emerald-400">1. Wide View</span>
                         <span className="bg-slate-800 px-2 py-0.5 rounded text-amber-400">2. Section</span>
                         <span className="bg-slate-800 px-2 py-0.5 rounded text-rose-400">3. Epicenter</span>
@@ -366,13 +366,13 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                 )}
 
                 {currentChapter.visualScene === "disasterReport" && (
-                  <div className="space-y-3">
-                    <div className="w-20 h-20 rounded-2xl bg-teal-500/20 border-2 border-teal-400 flex items-center justify-center text-teal-300 shadow-lg mx-auto">
-                      <HelpCircle className="w-10 h-10" />
+                  <div className="space-y-2.5 sm:space-y-3">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-teal-500/20 border-2 border-teal-400 flex items-center justify-center text-teal-300 shadow-lg mx-auto">
+                      <HelpCircle className="w-8 h-8 sm:w-10 sm:h-10" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-lg font-bold text-white">Disaster Report & Weather Verification</h4>
-                      <p className="text-xs text-teal-200 font-mono">
+                      <h4 className="text-base sm:text-lg font-bold text-white">Disaster Report & Weather Verification</h4>
+                      <p className="text-[11px] sm:text-xs text-teal-200 font-mono px-2">
                         Event: Heavy Rainfall &bull; Open-Meteo Spike: 94.2 mm &bull; Telemetry Matched
                       </p>
                     </div>
@@ -380,13 +380,13 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                 )}
 
                 {currentChapter.visualScene === "claimDossier" && (
-                  <div className="space-y-3">
-                    <div className="w-20 h-20 rounded-2xl bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center text-purple-300 shadow-lg mx-auto">
-                      <BarChart2 className="w-10 h-10" />
+                  <div className="space-y-2.5 sm:space-y-3">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center text-purple-300 shadow-lg mx-auto">
+                      <BarChart2 className="w-8 h-8 sm:w-10 sm:h-10" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-lg font-bold text-white">AI Damage Ratings & Compensation</h4>
-                      <p className="text-xs text-purple-200">
+                      <h4 className="text-base sm:text-lg font-bold text-white">AI Damage Ratings & Compensation</h4>
+                      <p className="text-[11px] sm:text-xs text-purple-200 px-2">
                         Gemini AI Loss: 65% &bull; Estimated Payout: ₹45,825 &bull; Status: Under Review
                       </p>
                     </div>
@@ -395,7 +395,7 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
               </div>
 
               {/* Subtitles / Audio Transcript Box */}
-              <div className="bg-slate-950/90 rounded-xl p-3 border border-slate-800 text-xs text-slate-200 z-10 space-y-1">
+              <div className="bg-slate-950/90 rounded-xl p-2.5 sm:p-3 border border-slate-800 text-[11px] sm:text-xs text-slate-200 z-10 space-y-1">
                 <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
                   {t("audioLabel", language)} ({language.toUpperCase()}):
                 </span>
@@ -415,19 +415,19 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between pt-1 gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     onClick={handlePrevChapter}
                     disabled={activeChapterIdx === 0}
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 transition"
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 transition cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
 
                   <button
                     onClick={handlePlayToggle}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl transition cursor-pointer text-xs shadow-md"
+                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 sm:px-4 py-2 rounded-xl transition cursor-pointer text-xs shadow-md"
                   >
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
                     <span>{isPlaying ? t("pauseBtn", language) : t("playBtn", language)}</span>
@@ -436,13 +436,13 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                   <button
                     onClick={handleNextChapter}
                     disabled={activeChapterIdx === TUTORIAL_CHAPTERS.length - 1}
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 transition"
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 transition cursor-pointer"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="text-xs text-slate-400 font-mono">
+                <div className="text-[11px] sm:text-xs text-slate-400 font-mono shrink-0">
                   {t("chapterOf", language)} {currentChapter.id} {t("of", language)} {TUTORIAL_CHAPTERS.length}
                 </div>
               </div>
@@ -450,13 +450,13 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
           </div>
 
           {/* Right Column: Step-by-step Chapter List & Key Steps (4 cols) */}
-          <div className="lg:col-span-4 bg-slate-900 p-4 sm:p-5 flex flex-col justify-between space-y-4">
+          <div className="lg:col-span-4 bg-slate-900 p-3 sm:p-5 flex flex-col justify-between space-y-3 sm:space-y-4">
             <div>
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 sm:mb-3">
                 {t("chaptersLabel", language)}
               </h4>
 
-              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[160px] sm:max-h-[220px] overflow-y-auto pr-1">
                 {TUTORIAL_CHAPTERS.map((ch, idx) => {
                   const Icon = ch.icon;
                   const isActive = idx === activeChapterIdx;
@@ -470,16 +470,16 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
                           : "bg-slate-950/50 hover:bg-slate-800 border-slate-800 text-slate-300"
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div className={`p-1.5 rounded-lg ${isActive ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-400"}`}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`p-1.5 rounded-lg shrink-0 ${isActive ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-400"}`}>
                           <Icon className="w-4 h-4" />
                         </div>
-                        <div>
-                          <div className="text-xs font-bold leading-snug">{ch.title[language] || ch.title.en}</div>
-                          <div className="text-[10px] text-slate-400 font-normal truncate max-w-[170px]">{ch.subtitle[language] || ch.subtitle.en}</div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold leading-snug truncate">{ch.title[language] || ch.title.en}</div>
+                          <div className="text-[10px] text-slate-400 font-normal truncate">{ch.subtitle[language] || ch.subtitle.en}</div>
                         </div>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-400">{ch.duration}</span>
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0 ml-2">{ch.duration}</span>
                     </button>
                   );
                 })}
@@ -487,15 +487,15 @@ export const TutorialVideoModal: React.FC<{ isOpen: boolean; onClose: () => void
             </div>
 
             {/* Practical Step Instructions for Current Chapter */}
-            <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div className="bg-slate-950 p-3 sm:p-3.5 rounded-2xl border border-slate-800 space-y-1.5 sm:space-y-2">
               <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 {t("keyStepsLabel", language)}
               </span>
               <ul className="space-y-1.5 text-[11px] text-slate-300">
                 {(currentChapter.keySteps[language] || currentChapter.keySteps.en).map((step, sIdx) => (
                   <li key={sIdx} className="flex items-start gap-1.5 leading-tight">
-                    <span className="text-emerald-500 font-bold">&bull;</span>
+                    <span className="text-emerald-500 font-bold shrink-0">&bull;</span>
                     <span>{step}</span>
                   </li>
                 ))}
